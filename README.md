@@ -1,119 +1,19 @@
-# Asset Deduplication Plugin
+Plugin for removing duplicates in the Unreal Engine project.
 
-Плагин для дедупликации ассетов в проектах Unreal Engine с настраиваемыми алгоритмами поиска дубликатов.
+Quick start:
+Install the plugin by placing it in the Plugins folder in the project.
+Open the plugin main utlity.
 
-## Возможности
+<img width="495" height="856" alt="image" src="https://github.com/user-attachments/assets/56ca7d7d-54be-448f-bd78-5b2ba71865fd" />
 
-### Алгоритмы дедупликации
+Configure your deduplication algorithm in the window on the right. 
+Configure your deduplication algorithm in the window on the right. 
+You configure the algorithm from different DeduplicateObject. DeduplicateObject look for groups of similar objects. These groups are combined into clusters through the sum or multiplication through the COmbination Score Method, and then filtered by the Confediancle Score. 
 
-1. **EqualNameDeduplication** - Сравнение имен ассетов
-   - Игнорирование регистра
-   - Игнорирование расширений файлов
-   - Игнорирование общих префиксов (SM_, T_, M_, BP_)
+Early Check Deduplicate Objects - separately exist for the pre-evaluation of deduplicated objects, before moving on to their evaluation by heavier algorithms.
+<img width="504" height="615" alt="image" src="https://github.com/user-attachments/assets/dbd24ac5-7a01-463f-8a03-b7ecf3dc61b5" />
 
-2. **EqualUassetDataDeduplication** - Анализ содержимого бинарных UAsset файлов
-   - Сравнение байтового содержимого
-   - Поиск общих подстрок
-   - Анализ текстового содержимого
-   - Настраиваемый порог схожести
+After that, click one of the two Analyze. After work, all the intended duplicators will appear in the Content on the right. Select priority folders or assets, and then click Merge. 
 
-### Система оценки
-
-- Комбинированная оценка на основе нескольких алгоритмов
-- Настраиваемые веса для каждого алгоритма
-- Автоматическое определение необходимости ручной проверки
-- Порог уверенности для автоматического разрешения
-
-### Пользовательский интерфейс
-
-- Интеграция с Content Browser
-- Отображение результатов дедупликации
-- Выделение папок с дубликатами желтым цветом
-- Интерактивное разрешение конфликтов
-
-### Система разрешения конфликтов
-
-- Автоматическое обновление ссылок
-- Резервное копирование перед удалением
-- Различные стратегии разрешения:
-  - Оставить первый/последний ассет
-  - Оставить конкретный ассет
-  - Удалить все дубликаты
-  - Ручное разрешение
-
-## Использование
-
-1. Откройте плагин через меню **Tools > Asset Deduplication**
-2. Настройте параметры алгоритмов дедупликации
-3. Нажмите **Analyze Assets** для запуска анализа
-4. Просмотрите найденные дубликаты в списке результатов
-5. Выберите кластер дубликатов для детального просмотра
-6. Используйте кнопку **Resolve** для автоматического разрешения или разрешите конфликты вручную
-
-## Настройка
-
-### Порог уверенности
-Установите минимальный порог уверенности для отображения дубликатов (0.0 - 10.0).
-
-### Алгоритмы дедупликации
-- Включите/выключите отдельные алгоритмы
-- Настройте веса для каждого алгоритма
-- Настройте параметры каждого алгоритма
-
-### Автоматическое разрешение
-- Включите автоматическое разрешение для высокоуверенных дубликатов
-- Установите порог для автоматического разрешения
-
-## Архитектура
-
-### Основные компоненты
-
-1. **UDeduplicateObject** - Базовый класс для алгоритмов дедупликации
-2. **UDeduplicationManager** - Менеджер координации алгоритмов
-3. **UDuplicateResolutionManager** - Менеджер разрешения конфликтов
-4. **SDeduplicationWidget** - Пользовательский интерфейс
-
-### Структуры данных
-
-- **FDuplicateGroup** - Группа дубликатов от одного алгоритма
-- **FDuplicateCluster** - Финальный кластер дубликатов
-- **FAssetDuplicateInfo** - Информация об ассете в контексте дубликатов
-- **FResolutionResult** - Результат разрешения конфликта
-
-## Расширение
-
-Для добавления новых алгоритмов дедупликации:
-
-1. Создайте класс, наследующий от `UDeduplicateObject`
-2. Реализуйте методы `GetAlgorithmName()`, `GetAlgorithmDescription()` и `FindDuplicatesInternal()`
-3. Добавьте алгоритм в `UDeduplicationManager`
-
-Пример:
-```cpp
-UCLASS(BlueprintType, Blueprintable)
-class UMyCustomDeduplication : public UDeduplicateObject
-{
-    GENERATED_BODY()
-
-public:
-    virtual FString GetAlgorithmName() const override
-    {
-        return TEXT("My Custom Algorithm");
-    }
-
-    virtual TArray<FDuplicateGroup> FindDuplicatesInternal(const TArray<FAssetData>& AssetsToAnalyze) override
-    {
-        // Ваша логика дедупликации
-        return TArray<FDuplicateGroup>();
-    }
-};
-```
-
-## Требования
-
-- Unreal Engine 4.26+
-- Editor модули: UnrealEd, AssetTools, AssetRegistry, ContentBrowser
-
-## Лицензия
-
-Copyright Epic Games, Inc. All Rights Reserved.
+Profit. 
+I will publish more information later.
