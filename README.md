@@ -16,6 +16,7 @@ Early Check Deduplicate Objects - separately exist for the pre-evaluation of ded
 <img width="512" height="213" alt="image" src="https://github.com/user-attachments/assets/cc4ee6d7-2773-46ee-8dbc-7f6121902c03" />
 
 After that, click one of the two Analyze. After work, all the intended duplicators will appear in the Content on the right. Select priority folders or assets, and then click Merge. 
+
 <img width="321" height="246" alt="image" src="https://github.com/user-attachments/assets/6d40c7c5-2a5c-456f-9820-a5bb794a75fc" />
 
 Profit. 
