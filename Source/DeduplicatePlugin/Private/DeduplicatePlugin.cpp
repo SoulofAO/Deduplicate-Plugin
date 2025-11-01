@@ -7,6 +7,8 @@
 #include "EditorStyleSet.h"
 #include "Framework/Docking/TabManager.h"
 #include "Widgets/Docking/SDockTab.h"
+#include "HAL/ThreadManager.h"
+
 
 #define LOCTEXT_NAMESPACE "FDeduplicatePluginModule"
 

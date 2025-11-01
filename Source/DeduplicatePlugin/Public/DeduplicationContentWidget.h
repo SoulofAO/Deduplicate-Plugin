@@ -26,7 +26,8 @@ struct FContentItem : public TSharedFromThis<FContentItem>
 	FString Path;
 	FAssetData Data;
 	bool bIsFolder = false;
-	FLinearColor Color;
+	bool bSetupColor = false;
+	FSlateColor Color;
 	TArray<TSharedPtr<FContentItem>> Children;
 	TSharedPtr<FContentItem> Parent;
 
@@ -43,6 +44,8 @@ public:
 	SLATE_BEGIN_ARGS(SContentFolderSimple) {}
 		SLATE_EVENT(FOnContentItemSelectedDelegate, OnContentItemSelectedDelegate)
 	SLATE_END_ARGS()
+
+	void Destruct();
 
 	void Construct(const FArguments& InArgs);
 

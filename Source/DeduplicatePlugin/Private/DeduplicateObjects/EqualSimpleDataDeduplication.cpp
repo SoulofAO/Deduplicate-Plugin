@@ -10,7 +10,6 @@
 UEqualSimpleUassetDataDeduplication::UEqualSimpleUassetDataDeduplication()
 {
 	MinCommonSubstringLength = 4;
-	bAnalyzeBinaryContent = true;
 }
 
 float UEqualSimpleUassetDataDeduplication::CalculateBinarySimilarity(const TArray<uint8>& Data1, const TArray<uint8>& Data2) const
@@ -28,9 +27,7 @@ float UEqualSimpleUassetDataDeduplication::CalculateBinarySimilarity(const TArra
 
 	float ByteSimilarity = (float)MatchingBytes / (float)MinSize;
 
-	int32 CommonSubstrings = UDeduplicationFunctionLibrary::FindCommonSubstrings(Data1, Data2, MinCommonSubstringLength);
-	float SubstringSimilarity = FMath::Min(1.0f, (float)CommonSubstrings / 10.0f);
 
-	return (ByteSimilarity * 0.8f + SubstringSimilarity * 0.2f);
+	return ByteSimilarity;
 }
 

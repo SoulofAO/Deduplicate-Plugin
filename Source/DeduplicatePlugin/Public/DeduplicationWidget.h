@@ -31,13 +31,15 @@ class SDeduplicationWidget : public SCompoundWidget
 
 	void Construct(const FArguments& InArgs);
 
+	void Destruct();
+
 	static TSharedRef<SWidget> CreateWidget(UDeduplicationManager* NewDeduplicationManager)
 	{
 		return SNew(SDeduplicationWidget)
 			.DeduplicationManager(NewDeduplicationManager);
 	}
 
-	void UpdateDeduplicationProgress(double Progress);
+	virtual void Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime) override;
 
 private:
 	TSharedPtr<IDetailsView> DetailsView;
@@ -48,17 +50,29 @@ private:
 	FString ResultsString;
 	UDeduplicationManager* DeduplicationManager;
 	TSharedPtr<SProgressBar> ProgressBar;
-	TSharedPtr<SButton>  AnalyzeInFolderButton;
-	TSharedPtr<SButton>  AnalyzeButton;
+	TSharedPtr<SButton> AnalyzeInFolderButton;
+	TSharedPtr<SButton> AnalyzeButton;
 
 	FReply OnAnalyzeClicked();
 	FReply OnAnalyzeClickedInSelectedFolder();
 	void StartAnalyze(TArray<FString> RootFolderPaths);
-	void OnFirstMergePriorityChanged(ECheckBoxState NewState);
 	void Merge(FAssetData AssetData, TArray<FDeduplicationAssetStruct> DuplicateAssets);
 	FReply OnMergeClicked();
 	void OnDeduplicationAnalyzeFinished(const TArray<FDuplicateCluster>& ResultClusters);
 	void RebuildAnalyze();
 	void RefreshResultsText();
 	void HandleContentItemSelected(TSharedPtr<FContentItem> SelectedItem);
+
+	float GetConfidenceThreshold();
+	void OnConfidenceThresholdChanged(float NewValue);
+	float ConfidenceThresholdDelaySeconds = 0.25f;
+	FTSTicker::FDelegateHandle ConfidenceThresholdTickerHandle;
+
+	float GetGroupConfidenceThreshold();
+	void OnGroupConfidenceThresholdChanged(float NewValue);
+	float GroupConfidenceThresholdDelaySeconds = 0.25f;
+	FTSTicker::FDelegateHandle GroupConfidenceThresholdTickerHandle;
+
+
+	bool HandleRebuildAnalyze(float DeltaTime);
 };

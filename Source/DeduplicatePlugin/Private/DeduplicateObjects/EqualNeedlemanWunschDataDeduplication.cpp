@@ -21,9 +21,19 @@ float UEqualNeedlemanWunschDataDeduplication::CalculateBinarySimilarity(const TA
 	const int32 LengthA = Data1.Num();
 	const int32 LengthB = Data2.Num();
 
-
 	const int32 Width = LengthB + 1;
 	const int32 Height = LengthA + 1;
+
+	const int64 Width64 = static_cast<int64>(Width);
+	const int64 Height64 = static_cast<int64>(Height);
+	const int64 Size = Width64 * Height64;
+
+	if (Size <= 0 || Size > INT32_MAX)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Too much elements for EqualNeedlemenDataDeduplication or invalid size: %lld"), Size);
+		return 0.0f;
+	}
+
 	const int32 TotalCells = Width * Height;
 
 	const int32 NegInf = INT32_MIN / 4;

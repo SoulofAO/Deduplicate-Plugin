@@ -8,10 +8,9 @@
 #include "EqualNeedlemanWunschDataDeduplication.generated.h"
 
 /**
- * Deduplication algorithm that analyzes binary UAsset content
- * Compares asset data to find similar or identical content
+	Deduplication that uses Needleman Wunsch everistics to compare two strings.
+	It takes a very long time to execute.
  */
-
 
 UCLASS(BlueprintType, Blueprintable)
 class DEDUPLICATEPLUGIN_API UEqualNeedlemanWunschDataDeduplication : public UEqualBaseDataDeduplication

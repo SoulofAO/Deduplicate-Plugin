@@ -37,8 +37,11 @@ public class DeduplicatePlugin : ModuleRules
 				"ContentBrowser",
 				"Slate",
 				"SlateCore",
-				"ToolWidgets"
-			}
+				"ToolWidgets",
+				"Niagara",
+                "RenderCore",
+				"RHI"
+            }
 			);
 			
 		

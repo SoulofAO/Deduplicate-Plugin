@@ -2,7 +2,7 @@
 
 
 #include "DeduplicateObjects/EqualDataBaseDeduplication.h"
-
+#include "Serialization/ObjectAndNameAsStringProxyArchive.h"
 
 UEqualBaseDataDeduplication::UEqualBaseDataDeduplication()
 {
@@ -18,6 +18,7 @@ TArray<FDuplicateGroup> UEqualBaseDataDeduplication::Internal_FindDuplicates_Imp
 		SupportedAssets.Add(Asset);
 	}
 
+	CalculateComplexity(AssetsToAnalyze);
 
 	for (int32 i = 0; i < SupportedAssets.Num(); i++)
 	{
@@ -39,11 +40,9 @@ TArray<FDuplicateGroup> UEqualBaseDataDeduplication::Internal_FindDuplicates_Imp
 					j--;
 				}
 			}
-
-			OnDeduplicationProgressCompleted.Broadcast(i / SupportedAssets.Num() + j / SupportedAssets.Num() * 1 / SupportedAssets.Num());
 		}
 
-		OnDeduplicationProgressCompleted.Broadcast(i / SupportedAssets.Num());
+		SetProgress(i);
 
 		if (CurrentGroup.Num() > 1)
 		{
@@ -55,6 +54,12 @@ TArray<FDuplicateGroup> UEqualBaseDataDeduplication::Internal_FindDuplicates_Imp
 	}
 
 	return DuplicateGroups;
+}
+
+float UEqualBaseDataDeduplication::CalculateComplexity_Implementation(const TArray<FAssetData>& CheckAssets)
+{
+	AlgorithmComplexity = CheckAssets.Num();
+	return CheckAssets.Num();
 }
 
 float UEqualBaseDataDeduplication::CalculateConfidenceScore_Implementation(const TArray<FAssetData>& Assets) const
@@ -102,7 +107,24 @@ float UEqualBaseDataDeduplication::CalculateSimilarity(const TArray<uint8>& Data
 
 bool UEqualBaseDataDeduplication::LoadAssetData(const FAssetData& Asset, TArray<uint8>& OutData) const
 {
-	FString AssetPath = Asset.ObjectPath.ToString();
+	if (ShouldUseSerialization)
+	{
+		UObject* AssetObject = Asset.GetAsset();
+		if (!AssetObject)
+		{
+			return false;
+		}
+
+		TArray<uint8> SerializedData;
+		FMemoryWriter MemoryWriter(SerializedData, /*bIsPersistent=*/ true);
+		FObjectAndNameAsStringProxyArchive ProxyArchive(MemoryWriter, /*bLoadIfFind=*/ false);
+		AssetObject->Serialize(ProxyArchive);
+
+		OutData = MoveTemp(SerializedData);
+		return true;
+	}
+
+	FString AssetPath = Asset.GetObjectPathString();
 	int Index;
 	AssetPath.FindLastChar(*TEXT("."), Index);
 	AssetPath = AssetPath.Left(Index);
@@ -121,4 +143,9 @@ bool UEqualBaseDataDeduplication::LoadAssetData(const FAssetData& Asset, TArray<
 float UEqualBaseDataDeduplication::CalculateBinarySimilarity(const TArray<uint8>& Data1, const TArray<uint8>& Data2) const
 {
 	return 0.0f;
+}
+
+bool UEqualBaseDataDeduplication::ShouldLoadAssets_Implementation()
+{
+	return ShouldUseSerialization;
 }

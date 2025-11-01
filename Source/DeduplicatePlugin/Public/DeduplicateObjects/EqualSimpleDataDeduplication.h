@@ -7,11 +7,8 @@
 #include "EqualSimpleDataDeduplication.generated.h"
 
 /**
- * Deduplication algorithm that analyzes binary UAsset content
- * Compares asset data to find similar or identical content
+	Deduplicator, that simply compares bitwise with a short proximity search. A very stupid algorithm.
  */
-
-
 UCLASS(BlueprintType, Blueprintable)
 class DEDUPLICATEPLUGIN_API UEqualSimpleUassetDataDeduplication : public UEqualBaseDataDeduplication
 {
@@ -24,7 +21,4 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Content Deduplication", meta = (AllowPrivateAccess = "true"))
 	int32 MinCommonSubstringLength = 4;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Content Deduplication", meta = (AllowPrivateAccess = "true"))
-	bool bAnalyzeBinaryContent = true;
 };

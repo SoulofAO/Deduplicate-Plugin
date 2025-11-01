@@ -66,6 +66,21 @@ public:
 	{
 		return AssetData == OtherAssetData;
 	}
+
+	bool AvailibleByConfidenceThreshold(float ConfidenceThreshold, float GroupConfidenceThreshold)
+	{
+		if (ClusterScore > ConfidenceThreshold)
+		{
+			for (FDeduplicationAssetStruct DuplicateAsset : DuplicateAssets)
+			{
+				if (DuplicateAsset.DeduplicationAssetScore > GroupConfidenceThreshold)
+				{
+					return true;
+				}
+			}
+		}
+		return false;
+	}
 };
 
 
@@ -82,7 +97,7 @@ enum class ECombinationScoreMethod : uint8
  */
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnDeduplicationAnalyzeCompleted, const TArray<FDuplicateCluster>&);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnDeduplicationProgressCompleted, const float);
+DECLARE_MULTICAST_DELEGATE(FOnDeduplicationProgressCompleted);
 
 UCLASS(BlueprintType, Blueprintable)
 class DEDUPLICATEPLUGIN_API UDeduplicationManager : public UObject
@@ -102,44 +117,55 @@ public:
 
 	FCriticalSection EndEarlyDeduplicationLock;
 
-	TArray<FDuplicateGroup> DeduplicateGroups;
+	FCriticalSection UpdateDeduplicationProgressCompletedMutex;
 
+	TArray<FDuplicateGroup> DeduplicateGroups;
 	TArray<FDuplicateGroup> EarlyDeduplicateGroups;
 
 	void StartAnalyzeAssetsAsync(const TArray<FAssetData>& AssetsToAnalyze);
 
 	void StartDeduplicationAsyncAfterEarlyCheck();
 
-	void StartDeduplicationAsync(TArray<FAssetData> AssetsToAnalyze);
-
 	void StartCreateClasters();
 
-	void BindUpdateDeduplicationProgressCompleted(float Progress);
+	void BindUpdateDeduplicationProgressCompleted();
 
 	void SetProgress(float Progress);
 	
 	TArray<FDuplicateCluster> FindMostPriorityDuplicateClusterByPath(FString Path);
 
+	UPROPERTY()
 	TArray<UDeduplicateObject*> EarlyCheckDeduplicationAlgorithmsInWork;
 
+	UPROPERTY()
 	TArray<UDeduplicateObject*> DeduplicationAlgorithmsInWork;
 
+	// Many DeduplicateObjects require significant processing time. To speed up the process, EarlyCheckDeduplicationAlgorithms are used.
+	// Their purpose is to filter out all Assets that are definitely not duplicates of each other and then further check their Group DeduplicateObject.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Instanced, Category = "Settings")
 	TArray<UDeduplicateObject*> EarlyCheckDeduplicationAlgorithms;
 
+	//The basic deduplication algorithm. When there are multiple objects to be deduplicated, the priorities of the objects to be deduplicated are summed and then filtered.
+	//When merging, priority is given to the highest-priority classifiers.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Instanced, Category = "Settings")
 	TArray<UDeduplicateObject*> DeduplicationAlgorithms;
 
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Settings")
-	ECombinationScoreMethod CombinationScoreMethod;
-
+	//Specifies the method by which group proximity scores will be summed.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings")
-	float ConfidenceThreshold = 0.6f;
+	ECombinationScoreMethod CombinationScoreMethod;
+	
+	float CompleteProgress = 0;
+	float SummaryComplexity = 0;
 
-	int DeduplicationAlgorithmProgressCompleteCount = 0;
-	float ProgressValue = 0.0;
+	//Trims all classifiers below a certain score level. This is most often used to isolate random matches.
+	UPROPERTY()
+	float ConfidenceThreshold = 1.2f;
 
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Settings")
+	UPROPERTY()
+	float GroupConfidenceThreshold = 0.7f;
+
+	float ProgressValue{ 0.0f };
+
 	TArray<FDuplicateCluster> Clasters;
 
 	TArray<FDuplicateCluster> GetClastersByFolder(FString Folder);
@@ -151,6 +177,4 @@ public:
 	bool bCompleteAnalyze = false;
 
 	FOnDeduplicationAnalyzeCompleted OnDeduplicationAnalyzeCompleted;
-
-	FOnDeduplicationProgressCompleted OnDeduplicationProgressCompleted;
 };

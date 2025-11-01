@@ -10,6 +10,13 @@
 #include "HAL/FileManager.h"
 #include "Misc/Paths.h"
 #include "Math/UnrealMathUtility.h"
+#include "RenderingThread.h"
+#include "Engine/Texture.h"
+#include "UObject/TopLevelAssetPath.h"
+#include "Particles/ParticleSystem.h"
+#include "NiagaraEmitter.h"
+#include "NiagaraSystem.h"
+#include "Engine/MapBuildDataRegistry.h"
 
 
 TArray<FDuplicateGroup> UEqualSizeDeduplication::Internal_FindDuplicates_Implementation(const TArray<FAssetData>& AssetsToAnalyze)
@@ -17,8 +24,8 @@ TArray<FDuplicateGroup> UEqualSizeDeduplication::Internal_FindDuplicates_Impleme
 	TArray<FDuplicateGroup> DuplicateGroups;
 	TMap<int64, TArray<FAssetData>> SizeToAssetsMap;
 
-	int32 TotalAssets = AssetsToAnalyze.Num();
-	if (TotalAssets > 0)
+	int32 TotalAssetsNumber = AssetsToAnalyze.Num();
+	if (TotalAssetsNumber > 0)
 	{
 		int32 Counter = 0;
 		for (const FAssetData& Asset : AssetsToAnalyze)
@@ -46,6 +53,10 @@ TArray<FDuplicateGroup> UEqualSizeDeduplication::Internal_FindDuplicates_Impleme
 				if ((1.0f - Penalty) > SimilarityThreshold)
 				{
 					SizePair.Value.Add(Asset);
+					if (SizePair.Value.Num()>10)
+					{
+						UE_LOG(LogTemp, Warning, TEXT("Too much Data in same Groups. Potential Error or Wrong Setting"));
+					}
 					bAddedToExistingGroup = true;
 					break;
 				}
@@ -56,13 +67,12 @@ TArray<FDuplicateGroup> UEqualSizeDeduplication::Internal_FindDuplicates_Impleme
 				SizeToAssetsMap.Add(AssetSize, TArray<FAssetData>{ Asset });
 			}
 
-			float Progress = (float)Counter / (float)TotalAssets * 0.5f;
-			OnDeduplicationProgressCompleted.Broadcast(Progress);
+			SetProgress(Counter);
 		}
 	}
 	else
 	{
-		OnDeduplicationProgressCompleted.Broadcast(1.0f);
+		SetProgress(TotalAssetsNumber);
 	}
 
 	{
@@ -80,9 +90,6 @@ TArray<FDuplicateGroup> UEqualSizeDeduplication::Internal_FindDuplicates_Impleme
 				FDuplicateGroup DuplicateGroup = CreateDuplicateGroup(AssetsWithSameSize, ConfidenceScore);
 				DuplicateGroups.Add(DuplicateGroup);
 			}
-
-			float Progress = NumSizes > 0 ? (float)Counter / (float)NumSizes * 0.5f + 0.5f : 1.0f;
-			OnDeduplicationProgressCompleted.Broadcast(Progress);
 		}
 	}
 
@@ -140,38 +147,91 @@ float UEqualSizeDeduplication::CalculateConfidenceScore_Implementation(const TAr
 }
 
 
+
 int64 UEqualSizeDeduplication::GetAssetFileSize(const FAssetData& Asset) const
 {
 	if (UseLoadingSize)
 	{
-		return Asset.GetAsset()->GetResourceSizeBytes(EResourceSizeMode::EstimatedTotal);
-	}
-	else
-	{
-		FString PackageName = Asset.PackageName.ToString();
-		FString Filename;
-
-		if (FPackageName::DoesPackageExist(PackageName, &Filename))
+		if (UClass* AssetClass = Asset.GetClass(); AssetClass && (AssetClass->IsChildOf(UTexture::StaticClass()) || AssetClass->IsChildOf(UParticleSystem::StaticClass()) || AssetClass->IsChildOf(UNiagaraEmitter::StaticClass()) || AssetClass->IsChildOf(UNiagaraSystem::StaticClass()) ))
 		{
-			int64 Size = IFileManager::Get().FileSize(*Filename);
-			if (Size >= 0)
+			int64 Size = -1;
+			UObject* AssetObj = Asset.GetAsset();
+			if (AssetObj)
 			{
+				UObject* CaptureAsset = AssetObj;
+				FEvent* WaitEvent = FPlatformProcess::GetSynchEventFromPool(true);
+				AsyncTask(ENamedThreads::ActualRenderingThread, [AssetObj, &Size, WaitEvent]()
+					{
+						Size = AssetObj ? AssetObj->GetResourceSizeBytes(EResourceSizeMode::EstimatedTotal) : -1;
+						WaitEvent->Trigger();
+					});
+
+				WaitEvent->Wait();
+				FPlatformProcess::ReturnSynchEventToPool(WaitEvent);
+
 				return Size;
 			}
 		}
-
-		FString CandidateFilename = FPackageName::LongPackageNameToFilename(PackageName, TEXT(".uasset"));
-		int64 CandidateSize = IFileManager::Get().FileSize(*CandidateFilename);
-		if (CandidateSize >= 0)
+		else if (AssetClass && (AssetClass->IsChildOf(UStaticMesh::StaticClass()) || AssetClass->IsChildOf(USkeletalMesh::StaticClass())))
 		{
-			return CandidateSize;
-		}
+			int64 Size = -1;
+			FAssetData AssetCopy = Asset;
+			FEvent* WaitEvent = FPlatformProcess::GetSynchEventFromPool(true);
+			FGraphEventRef Task = FFunctionGraphTask::CreateAndDispatchWhenReady([&Size, AssetCopy, WaitEvent]()
+				{
+					UObject* AssetObj = AssetCopy.GetAsset();
+					Size = AssetObj ? AssetObj->GetResourceSizeBytes(EResourceSizeMode::EstimatedTotal) : -1;
+					WaitEvent->Trigger();
+				}, TStatId(), nullptr, ENamedThreads::GameThread);
 
-		return -1;
+			WaitEvent->Wait();
+			FPlatformProcess::ReturnSynchEventToPool(WaitEvent);
+
+			return Size;
+		}
+		else if (AssetClass->IsChildOf(UWorld::StaticClass()) || AssetClass->IsChildOf(UMapBuildDataRegistry::StaticClass()))
+		{
+			//skip
+		}
+		else
+		{
+			UObject* AssetObjFallback = Asset.GetAsset();
+			if (AssetObjFallback)
+			{
+				return AssetObjFallback->GetResourceSizeBytes(EResourceSizeMode::EstimatedTotal);
+			}
+		}
 	}
+
+	FString PackageName = Asset.PackageName.ToString();
+	FString Filename;
+
+	if (FPackageName::DoesPackageExist(PackageName, &Filename))
+	{
+		int64 Size = IFileManager::Get().FileSize(*Filename);
+		if (Size >= 0)
+		{
+			return Size;
+		}
+	}
+
+	FString CandidateFilename = FPackageName::LongPackageNameToFilename(PackageName, TEXT(".uasset"));
+	int64 CandidateSize = IFileManager::Get().FileSize(*CandidateFilename);
+	if (CandidateSize >= 0)
+	{
+		return CandidateSize;
+	}
+
+	return -1;
 }
 
 bool UEqualSizeDeduplication::ShouldLoadAssets_Implementation()
 {
 	return UseLoadingSize;
+}
+
+float UEqualSizeDeduplication::CalculateComplexity_Implementation(const TArray<FAssetData>& CheckAssets)
+{
+	AlgorithmComplexity = CheckAssets.Num();
+	return CheckAssets.Num();
 }

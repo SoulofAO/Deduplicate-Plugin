@@ -21,6 +21,8 @@
 #include "Modules/ModuleManager.h"
 #include "Interfaces/IPluginManager.h"
 #include "Subsystems/EditorAssetSubsystem.h"
+#include "HAL/ThreadManager.h"
+
 
 TSharedRef<SWidget> UContentFolderHostWidget::RebuildWidget()
 {
@@ -30,6 +32,17 @@ TSharedRef<SWidget> UContentFolderHostWidget::RebuildWidget()
 		[
 			SlateContentFolderWidget.ToSharedRef()
 		];
+}
+
+void SContentFolderSimple::Destruct()
+{
+	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+	IAssetRegistry& AssetRegistry = AssetRegistryModule.Get();
+
+	AssetRegistry.OnAssetAdded().Remove(AssetAddedHandle);
+	AssetRegistry.OnAssetRemoved().Remove(AssetRemovedHandle);
+	AssetRegistry.OnPathAdded().Remove(PathAddedHandle);
+	AssetRegistry.OnPathRemoved().Remove(PathRemovedHandle);
 }
 
 void SContentFolderSimple::Construct(const FArguments& InArgs)
@@ -381,7 +394,7 @@ TSharedPtr<FContentItem> SContentFolderSimple::GetSelectedItem()
 	{
 		return nullptr;
 	}
-	if (TreeView->GetSelectedItems().Num()>0)
+	if (TreeView->GetNumItemsSelected() > 0)
 	{
 		return TreeView->GetSelectedItems()[0];
 	}
@@ -396,6 +409,8 @@ void SContentFolderSimple::HandleGetChildren(TSharedPtr<FContentItem> InItem, TA
 TSharedRef<ITableRow> SContentFolderSimple::HandleGenerateRow(TSharedPtr<FContentItem> InItem, const TSharedRef<STableViewBase>& OwnerTable)
 {
 	TSharedPtr<FAssetThumbnailPool> ThumbnailPool = UThumbnailManager::Get().GetSharedThumbnailPool();
+
+	FSlateColor SlateColor = GetItemColorOrDefault(InItem);
 
 	if (!InItem->bIsFolder)
 	{
@@ -419,7 +434,7 @@ TSharedRef<ITableRow> SContentFolderSimple::HandleGenerateRow(TSharedPtr<FConten
 						SNew(STextBlock).
 							Text(FText::FromString(InItem->Name))
 							.ColorAndOpacity_Lambda([this, InItem]() -> FSlateColor {
-								return FSlateColor(GetItemColorOrDefault(InItem));
+								return GetItemColorOrDefault(InItem);
 							})
 					]
 			];
@@ -443,7 +458,7 @@ TSharedRef<ITableRow> SContentFolderSimple::HandleGenerateRow(TSharedPtr<FConten
 					[
 						SNew(STextBlock).Text(FText::FromString(InItem->Name))
 							.ColorAndOpacity_Lambda([this, InItem]() -> FSlateColor {
-								return FSlateColor(GetItemColorOrDefault(InItem));
+								return GetItemColorOrDefault(InItem);
 							})
 					]
 			];
@@ -610,6 +625,11 @@ void SContentFolderSimple::ClearPathColor(FString Path)
 	{
 		return;
 	}
+	TSharedPtr<FContentItem> ContentItem = FindContentItemByPathAcrossRoots(Path);
+	if (ContentItem)
+	{
+		ContentItem->bSetupColor = false;
+	}
 	ItemColors.Remove(Path);
 	if (TreeView.IsValid())
 	{
@@ -638,6 +658,16 @@ TSharedPtr<FContentItem> FContentItem::CreateAsset(FAssetData InData)
 
 void SContentFolderSimple::ClearAllPathColor()
 {
+	TArray<TSharedPtr<FContentItem>> Items = GetAllContentItems();
+
+	for (TSharedPtr<FContentItem> Item : Items)
+	{
+		if (Item.IsValid())
+		{
+			Item->bSetupColor = false;
+		}
+	}
+
 	ItemColors.Empty();
 }
 
@@ -647,11 +677,21 @@ FSlateColor SContentFolderSimple::GetItemColorOrDefault(TSharedPtr<FContentItem>
 	{
 		return FSlateColor(FLinearColor::White);
 	}
-	const FSlateColor* Found = ItemColors.Find(Item->Path);
-	if (Found)
+	if (Item->bSetupColor)
 	{
-		return *Found;
+		return Item->Color;
 	}
+	else
+	{
+		const FSlateColor* Found = ItemColors.Find(Item->Path);
+		if (Found)
+		{
+			Item->bSetupColor = true;
+			Item->Color = *Found;
+			return *Found;
+		}
+	}
+
 	return FSlateColor(FLinearColor::White);
 }
 

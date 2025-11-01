@@ -64,6 +64,8 @@ void UDeduplicateObject::FindDuplicates(const TArray<FAssetData>& AssetsToAnalyz
 {
     DeduplicationAssets = AssetsToAnalyze;
 
+    CalculateComplexity(AssetsToAnalyze);
+
     if (ShouldLoadAssets())
     {
 		OnLoadingAssetsCompleted.AddUObject(this, &UDeduplicateObject::Iternal_StartFindDeduplicatesAfterLoad);
@@ -80,6 +82,10 @@ void UDeduplicateObject::Iternal_StartFindDeduplicatesAfterLoad()
     OnLoadingAssetsCompleted.RemoveAll(this);
 
 	TArray<FDuplicateGroup> Result = Internal_FindDuplicates(DeduplicationAssets);
+    for (FDuplicateGroup& DuplicateGroupRef : Result)
+    {
+        DuplicateGroupRef.ConfidenceScore = DuplicateGroupRef.ConfidenceScore * Weight;
+    }
 	OnDeduplicationCompleted.Broadcast(Result, this);
 }
 
@@ -94,10 +100,6 @@ bool UDeduplicateObject::ShouldLoadAssets_Implementation()
 	return false;
 }
 
-void UDeduplicateObject::BroadcastDeduplicationProgressCompleted(const float Progress)
-{
-}
-
 FDuplicateGroup UDeduplicateObject::CreateDuplicateGroup(const TArray<FAssetData>& NewAssets, float Score)
 {
 	GetAlgorithmName();
@@ -108,4 +110,65 @@ FDuplicateGroup UDeduplicateObject::CreateDuplicateGroup(const TArray<FAssetData
 float UDeduplicateObject::CalculateConfidenceScore_Implementation(const TArray<FAssetData>& CheckAssets) const
 {
 	return 0.5f;
+}
+
+void UDeduplicateObject::SetProgress(float NewProgress)
+{
+    Progress = NewProgress;
+    OnDeduplicationProgressCompleted.Broadcast();
+}
+
+float UDeduplicateObject::CalculateComplexity_Implementation(const TArray<FAssetData>& CheckAssets)
+{
+    return 0.0f;
+}
+
+bool UDeduplicateObject::IsAssetClassAllowed(UClass* AssetClass) const
+{
+    if (!AssetClass)
+    {
+        return false;
+    }
+
+    if (IncludeClasses.Num() > 0)
+    {
+        bool bMatchesInclude = false;
+        for (const TSubclassOf<UObject>& Include : IncludeClasses)
+        {
+            if (!Include) continue;
+            if (AssetClass->IsChildOf(Include))
+            {
+                bMatchesInclude = true;
+                break;
+            }
+        }
+        if (!bMatchesInclude)
+        {
+            return false;
+        }
+    }
+
+    for (const TSubclassOf<UObject>& Exclude : ExcludeClasses)
+    {
+        if (!Exclude) continue;
+        if (AssetClass->IsChildOf(Exclude))
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+void UDeduplicateObject::FilterAssetsByIncludeExclude(const TArray<FAssetData>& InAssets, TArray<FAssetData>& OutFiltered) const
+{
+    OutFiltered.Reset();
+    for (const FAssetData& Asset : InAssets)
+    {
+        UClass* AssetClass = Asset.GetClass();
+        if (IsAssetClassAllowed(AssetClass))
+        {
+            OutFiltered.Add(Asset);
+        }
+    }
 }

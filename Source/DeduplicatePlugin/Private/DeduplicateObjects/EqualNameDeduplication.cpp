@@ -36,8 +36,8 @@ TArray<FDuplicateGroup> UEqualNameDeduplication::Internal_FindDuplicates_Impleme
 	TArray<FDuplicateGroup> DuplicateGroups;
 	TMap<FString, TArray<FAssetData>> NameToAssetsMap;
 
-	int32 TotalAssets = AssetsToAnalyze.Num();
-	if (TotalAssets > 0)
+	int32 TotalAssetsNumber = AssetsToAnalyze.Num();
+	if (TotalAssetsNumber > 0)
 	{
 		int32 Counter = 0;
 		for (const FAssetData& Asset : AssetsToAnalyze)
@@ -76,13 +76,13 @@ TArray<FDuplicateGroup> UEqualNameDeduplication::Internal_FindDuplicates_Impleme
 				NameToAssetsMap.Add(NormalizedName, TArray<FAssetData>{ Asset });
 			}
 
-			float Progress = (float)Counter / (float)TotalAssets * 0.5f;
-			OnDeduplicationProgressCompleted.Broadcast(Progress);
+			SetProgress(Counter);
+			OnDeduplicationProgressCompleted.Broadcast();
 		}
 	}
 	else
 	{
-		OnDeduplicationProgressCompleted.Broadcast(1.0f);
+		SetProgress(TotalAssetsNumber);
 	}
 
 	{
@@ -101,8 +101,7 @@ TArray<FDuplicateGroup> UEqualNameDeduplication::Internal_FindDuplicates_Impleme
 				DuplicateGroups.Add(DuplicateGroup);
 			}
 
-			float Progress = NumNames > 0 ? (float)Counter / (float)NumNames * 0.5f + 0.5f : 1.0f;
-			OnDeduplicationProgressCompleted.Broadcast(Progress);
+			SetProgress(Counter + TotalAssetsNumber);
 		}
 	}
 
@@ -147,6 +146,12 @@ float UEqualNameDeduplication::CalculateConfidenceScore_Implementation(const TAr
 	return FMath::Clamp(AverageSimilarity, 0.0f, 1.0f);
 }
 
+float UEqualNameDeduplication::CalculateComplexity_Implementation(const TArray<FAssetData>& CheckAssets)
+{
+	AlgorithmComplexity = CheckAssets.Num() * 2;
+	return CheckAssets.Num();
+}
+
 
 bool UEqualNameDeduplication::AreNamesEqual(const FString& Name1, const FString& Name2) const
 {
@@ -187,3 +192,4 @@ FString UEqualNameDeduplication::NormalizeAssetName(const FString& AssetName) co
 	
 	return NormalizedName;
 }
+
