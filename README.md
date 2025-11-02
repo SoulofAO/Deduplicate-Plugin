@@ -21,3 +21,13 @@ After that, click one of the two Analyze. After work, all the intended duplicato
 
 Profit. 
 I will publish more information later.
+
+Copyright / Usage Rules — Deduplication
+Deduplication is released as Open Source.
+Any derivative, fork, or plugin whose primary purpose is finding/removing/merging duplicate assets for Unreal Engine must be open source and distributed under compatible terms.
+Projects that reuse the code for a different primary purpose may be closed/commercial, but must include clear attribution (see example).
+Do not remove or alter the original LICENSE, NOTICE files or existing author headers in source files.
+The code is provided “AS IS”; authors give no warranties and accept no liability for damages.
+Attribution example (place in README/About/Docs):
+Based on "Deduplication" — https://github.com/your-repo/deduplication
+The plugin author(s) reserve the right to modify these rules.
