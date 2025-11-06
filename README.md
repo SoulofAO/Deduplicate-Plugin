@@ -19,8 +19,11 @@ After that, click one of the two Analyze. After work, all the intended duplicato
 
 <img width="321" height="246" alt="image" src="https://github.com/user-attachments/assets/6d40c7c5-2a5c-456f-9820-a5bb794a75fc" />
 
-Profit. 
+Profit.
 I will publish more information later.
+
+Showcase:
+https://youtu.be/aj4SMnDF4fk?si=Y8tI0uOJMNXPnQGJ
 
 Copyright / Usage Rules — Deduplication
 Deduplication is released as Open Source.
@@ -32,8 +35,5 @@ Projects that reuse the code for a different primary purpose may be closed/comme
 Do not remove or alter the original LICENSE, NOTICE files or existing author headers in source files.
 
 The code is provided “AS IS”; authors give no warranties and accept no liability for damages.
-
-Attribution example (place in README/About/Docs):
-Based on "Deduplication" — https://github.com/your-repo/deduplication
 
 The plugin author(s) reserve the right to modify these rules.
