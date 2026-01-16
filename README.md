@@ -6,6 +6,7 @@ Open the plugin main utlity.
 
 <img width="495" height="856" alt="image" src="https://github.com/user-attachments/assets/56ca7d7d-54be-448f-bd78-5b2ba71865fd" />
 
+Quick start.
 Configure your deduplication algorithm in the window on the right. 
 Configure your deduplication algorithm in the window on the right. 
 You configure the algorithm from different DeduplicateObject. DeduplicateObject look for groups of similar objects. These groups are combined into clusters through the sum or multiplication through the COmbination Score Method, and then filtered by the Confediancle Score. 
@@ -20,20 +21,10 @@ After that, click one of the two Analyze. After work, all the intended duplicato
 <img width="321" height="246" alt="image" src="https://github.com/user-attachments/assets/6d40c7c5-2a5c-456f-9820-a5bb794a75fc" />
 
 Profit.
-I will publish more information later.
+For more information, read attached documentation.
 
 Showcase:
 https://youtu.be/aj4SMnDF4fk?si=Y8tI0uOJMNXPnQGJ
 
-Copyright / Usage Rules — Deduplication
-Deduplication is released as Open Source.
-
-Any derivative, fork, or plugin whose primary purpose is finding/removing/merging duplicate assets for Unreal Engine must be open source and distributed under compatible terms.
-
-Projects that reuse the code for a different primary purpose may be closed/commercial, but must include clear attribution (see example).
-
-Do not remove or alter the original LICENSE, NOTICE files or existing author headers in source files.
-
-The code is provided “AS IS”; authors give no warranties and accept no liability for damages.
-
-The plugin author(s) reserve the right to modify these rules.
+Documentation:
+https://docs.google.com/document/d/1CfPzAvMcwM8HJiePUiIiFC_vtNq1W1RfXnq0VOJqHMg/edit?usp=sharing
