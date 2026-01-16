@@ -1,4 +1,8 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+/*
+ * Publisher: AO
+ * Year of Publication: 2026
+ * Copyright AO All Rights Reserved.
+ */
 
 #include "DeduplicateObjects/EqualNameDeduplication.h"
 #include "Engine/AssetManager.h"
@@ -21,10 +25,10 @@ UEqualNameDeduplication::UEqualNameDeduplication()
 	CommonPrefixesToIgnore.Add(TEXT("T_"));         // Texture
 	CommonPrefixesToIgnore.Add(TEXT("TX_"));        // Texture (alternative)
 	CommonPrefixesToIgnore.Add(TEXT("A_"));         // Animation asset (AnimSequence / Montage)
-	CommonPrefixesToIgnore.Add(TEXT("ANIM_"));      // Animation (альтернативный)
+	CommonPrefixesToIgnore.Add(TEXT("ANIM_"));      // Animation (пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ)
 	CommonPrefixesToIgnore.Add(TEXT("P_"));         // Particle system (Cascade/Niagara)
-	CommonPrefixesToIgnore.Add(TEXT("FX_"));        // VFX / эффект
-	CommonPrefixesToIgnore.Add(TEXT("NS_"));   // Niagara system / emitter (если используется)
+	CommonPrefixesToIgnore.Add(TEXT("FX_"));        // VFX / пїЅпїЅпїЅпїЅпїЅпїЅ
+	CommonPrefixesToIgnore.Add(TEXT("NS_"));   // Niagara system / emitter (пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ)
 	CommonPrefixesToIgnore.Add(TEXT("S_"));         // Sound (SoundWave / raw sound)
 	CommonPrefixesToIgnore.Add(TEXT("SC_"));        // SoundCue
 	CommonPrefixesToIgnore.Add(TEXT("UI_"));        // UI / user interface assets
@@ -42,6 +46,11 @@ TArray<FDuplicateGroup> UEqualNameDeduplication::Internal_FindDuplicates_Impleme
 		int32 Counter = 0;
 		for (const FAssetData& Asset : AssetsToAnalyze)
 		{
+			if (ShouldStop())
+			{
+				break;
+			}
+			
 			Counter++;
 			FString NormalizedName = NormalizeAssetName(Asset.AssetName.ToString());
 
@@ -91,6 +100,11 @@ TArray<FDuplicateGroup> UEqualNameDeduplication::Internal_FindDuplicates_Impleme
 
 		for (auto& NamePair : NameToAssetsMap)
 		{
+			if (ShouldStop())
+			{
+				break;
+			}
+			
 			Counter++;
 			const TArray<FAssetData>& AssetsWithSameName = NamePair.Value;
 
@@ -122,6 +136,11 @@ float UEqualNameDeduplication::CalculateConfidenceScore_Implementation(const TAr
 
 	for (int32 IndexA = 0; IndexA < NumAssets - 1; ++IndexA)
 	{
+		if (ShouldStop())
+		{
+			break;
+		}
+		
 		const FString NameA = NormalizeAssetName(Assets[IndexA].AssetName.ToString());
 
 		for (int32 IndexB = IndexA + 1; IndexB < NumAssets; ++IndexB)

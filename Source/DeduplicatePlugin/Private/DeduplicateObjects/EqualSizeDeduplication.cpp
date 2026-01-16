@@ -1,4 +1,8 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+/*
+ * Publisher: AO
+ * Year of Publication: 2026
+ * Copyright AO All Rights Reserved.
+ */
 
 
 #include "DeduplicateObjects/EqualSizeDeduplication.h"
@@ -30,6 +34,11 @@ TArray<FDuplicateGroup> UEqualSizeDeduplication::Internal_FindDuplicates_Impleme
 		int32 Counter = 0;
 		for (const FAssetData& Asset : AssetsToAnalyze)
 		{
+			if (ShouldStop())
+			{
+				break;
+			}
+			
 			Counter++;
 			int64 AssetSize = GetAssetFileSize(Asset);
 
@@ -110,6 +119,11 @@ float UEqualSizeDeduplication::CalculateConfidenceScore_Implementation(const TAr
 
 	for (int32 IndexA = 0; IndexA < NumAssets - 1; ++IndexA)
 	{
+		if (ShouldStop())
+		{
+			break;
+		}
+		
 		const int64 SizeA = GetAssetFileSize(Assets[IndexA]);
 
 		for (int32 IndexB = IndexA + 1; IndexB < NumAssets; ++IndexB)

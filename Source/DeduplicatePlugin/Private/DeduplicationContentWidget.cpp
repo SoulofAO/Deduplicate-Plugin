@@ -1,4 +1,8 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+/*
+ * Publisher: AO
+ * Year of Publication: 2026
+ * Copyright AO All Rights Reserved.
+ */
 
 #include "DeduplicationContentWidget.h"
 #include "Widgets/Layout/SBorder.h"
@@ -697,6 +701,11 @@ FSlateColor SContentFolderSimple::GetItemColorOrDefault(TSharedPtr<FContentItem>
 
 TSharedPtr<FContentItem> SContentFolderSimple::FindContentItemBySegmentsRecursive(const TSharedPtr<FContentItem>& CurrentItem, const TArray<FString>& Segments, int32 Index)
 {
+	if (!CurrentItem)
+	{
+		return nullptr;
+	}
+
 	if (!CurrentItem.IsValid()) return nullptr;
 	if (Index >= Segments.Num()) return CurrentItem;
 	if (Index == 0 && Segments.Num() > 0 && CurrentItem->Name.Equals(Segments[0], ESearchCase::IgnoreCase))

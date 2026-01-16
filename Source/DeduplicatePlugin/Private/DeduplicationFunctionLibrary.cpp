@@ -1,3 +1,9 @@
+/*
+ * Publisher: AO
+ * Year of Publication: 2026
+ * Copyright AO All Rights Reserved.
+ */
+
 #include "DeduplicationFunctionLibrary.h"
 #include "CoreMinimal.h"
 #include "Templates/UnrealTemplate.h"

@@ -1,14 +1,29 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+/*
+ * Publisher: AO
+ * Year of Publication: 2026
+ * Copyright AO All Rights Reserved.
+ */
 
 #include "DeduplicateObjects/DeduplicateObject.h"
 #include "AssetRegistry/AssetData.h"
 #include "Engine/StreamableManager.h"
 #include "Engine/AssetManager.h"
+#include "DeduplicationManager.h"
 #include <cfloat>
 
 UDeduplicateObject::UDeduplicateObject()
 {
     Weight = 1.0f;
+    OwnerManager = nullptr;
+}
+
+bool UDeduplicateObject::ShouldStop() const
+{
+	if (OwnerManager == nullptr)
+	{
+		return false;
+	}
+	return OwnerManager->bShouldStop.GetValue() !=0;
 }
 
 void UDeduplicateObject::Load(const TArray<FAssetData>& AssetsToAnalyze)
@@ -62,24 +77,34 @@ void UDeduplicateObject::Load(const TArray<FAssetData>& AssetsToAnalyze)
 
 void UDeduplicateObject::FindDuplicates(const TArray<FAssetData>& AssetsToAnalyze)
 {
-    DeduplicationAssets = AssetsToAnalyze;
+	TArray<FAssetData> FilteredAssets;
+	FilterAssetsByIncludeExclude(AssetsToAnalyze, FilteredAssets);
+	
+	DeduplicationAssets = FilteredAssets;
 
-    CalculateComplexity(AssetsToAnalyze);
+	CalculateComplexity(FilteredAssets);
 
-    if (ShouldLoadAssets())
-    {
+	if (ShouldLoadAssets())
+	{
 		OnLoadingAssetsCompleted.AddUObject(this, &UDeduplicateObject::Iternal_StartFindDeduplicatesAfterLoad);
-        Load(AssetsToAnalyze);
-    }
-    else
-    {
-        Iternal_StartFindDeduplicatesAfterLoad();
-    }
+		Load(FilteredAssets);
+	}
+	else
+	{
+		Iternal_StartFindDeduplicatesAfterLoad();
+	}
 }
 
 void UDeduplicateObject::Iternal_StartFindDeduplicatesAfterLoad()
 {
     OnLoadingAssetsCompleted.RemoveAll(this);
+
+	if (ShouldStop())
+	{
+		TArray<FDuplicateGroup> EmptyResult;
+		OnDeduplicationCompleted.Broadcast(EmptyResult, this);
+		return;
+	}
 
 	TArray<FDuplicateGroup> Result = Internal_FindDuplicates(DeduplicationAssets);
     for (FDuplicateGroup& DuplicateGroupRef : Result)

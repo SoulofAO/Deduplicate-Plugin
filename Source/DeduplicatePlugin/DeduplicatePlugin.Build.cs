@@ -1,4 +1,8 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+/*
+ * Publisher: AO
+ * Year of Publication: 2026
+ * Copyright AO All Rights Reserved.
+ */
 
 using UnrealBuildTool;
 
@@ -40,7 +44,8 @@ public class DeduplicatePlugin : ModuleRules
 				"ToolWidgets",
 				"Niagara",
                 "RenderCore",
-				"RHI"
+				"RHI",
+				"Json"
             }
 			);
 			
@@ -60,6 +65,7 @@ public class DeduplicatePlugin : ModuleRules
 				"DetailCustomizations",
 				"BlueprintGraph",
 				"KismetCompiler",
+				"MaterialEditor",
 				"ToolMenus",
 				"EditorSubsystem",
 				"Slate",

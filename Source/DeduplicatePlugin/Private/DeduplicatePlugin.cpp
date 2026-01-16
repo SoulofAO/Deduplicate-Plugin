@@ -1,4 +1,8 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+/*
+ * Publisher: AO
+ * Year of Publication: 2026
+ * Copyright AO All Rights Reserved.
+ */
 
 #include "DeduplicatePlugin.h"
 #include "DeduplicationManager.h"
@@ -49,7 +53,7 @@ void FDeduplicatePluginModule::RegisterMenus()
 	{
 		UToolMenu* Menu = UToolMenus::Get()->ExtendMenu("LevelEditor.MainMenu.Tools");
 		{
-			FToolMenuSection& Section = Menu->FindOrAddSection("Deduplication");
+			FToolMenuSection& Section = Menu->AddSection("DeduplicatePluginSection", LOCTEXT("DeduplicationSection", "Deduplication"));
 			Section.AddMenuEntry(FName("OpenDeduplicationWidget"),
 				LOCTEXT("OpenDeduplicationWidget", "Asset Deduplication"),
 				LOCTEXT("OpenDeduplicationWidgetTooltip", "Open the Asset Deduplication tool"),

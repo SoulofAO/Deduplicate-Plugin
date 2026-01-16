@@ -1,4 +1,8 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+/*
+ * Publisher: AO
+ * Year of Publication: 2026
+ * Copyright AO All Rights Reserved.
+ */
 
 
 #include "DeduplicateObjects/EqualDataBaseDeduplication.h"
@@ -15,6 +19,10 @@ TArray<FDuplicateGroup> UEqualBaseDataDeduplication::Internal_FindDuplicates_Imp
 
 	for (const FAssetData& Asset : AssetsToAnalyze)
 	{
+		if (ShouldStop())
+		{
+			break;
+		}
 		SupportedAssets.Add(Asset);
 	}
 
@@ -22,11 +30,21 @@ TArray<FDuplicateGroup> UEqualBaseDataDeduplication::Internal_FindDuplicates_Imp
 
 	for (int32 i = 0; i < SupportedAssets.Num(); i++)
 	{
+		if (ShouldStop())
+		{
+			break;
+		}
+		
 		TArray<FAssetData> CurrentGroup;
 		CurrentGroup.Add(SupportedAssets[i]);
 
 		for (int32 j = i + 1; j < SupportedAssets.Num(); j++)
 		{
+			if (ShouldStop())
+			{
+				break;
+			}
+			
 			TArray<uint8> Data1, Data2;
 
 			if (LoadAssetData(SupportedAssets[i], Data1) && LoadAssetData(SupportedAssets[j], Data2))
@@ -74,8 +92,18 @@ float UEqualBaseDataDeduplication::CalculateConfidenceScore_Implementation(const
 
 	for (int32 i = 0; i < Assets.Num(); i++)
 	{
+		if (ShouldStop())
+		{
+			break;
+		}
+		
 		for (int32 j = i + 1; j < Assets.Num(); j++)
 		{
+			if (ShouldStop())
+			{
+				break;
+			}
+			
 			TArray<uint8> Data1, Data2;
 			if (LoadAssetData(Assets[i], Data1) && LoadAssetData(Assets[j], Data2))
 			{

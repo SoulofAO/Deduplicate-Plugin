@@ -1,4 +1,8 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+/*
+ * Publisher: AO
+ * Year of Publication: 2026
+ * Copyright AO All Rights Reserved.
+ */
 
 #pragma once
 
@@ -52,9 +56,23 @@ private:
 	TSharedPtr<SProgressBar> ProgressBar;
 	TSharedPtr<SButton> AnalyzeInFolderButton;
 	TSharedPtr<SButton> AnalyzeButton;
+	TSharedPtr<SButton> StopAnalyzeButton;
+	TSharedPtr<SButton> SaveResultsButton;
+	TSharedPtr<SButton> AddSavedResultButton;
+	TSharedPtr<SScrollBox> SavedResultsScrollBox;
+	TSharedPtr<SVerticalBox> SavedResultsVerticalBox;
+	TArray<FString> LoadedSavedResults;
+	TSharedPtr<TArray<TSharedPtr<FString>>> SelectWindowResultsList;
 
 	FReply OnAnalyzeClicked();
 	FReply OnAnalyzeClickedInSelectedFolder();
+	FReply OnStopAnalyzeClicked();
+	FReply OnSaveResultsClicked();
+	FReply OnAddSavedResultClicked();
+	FReply OnDeleteSavedResultClicked(FString SaveName);
+	void RefreshSavedResultsList();
+	void ReloadAllSavedResults();
+	TSharedRef<SWidget> CreateSavedResultItem(FString SaveName);
 	void StartAnalyze(TArray<FString> RootFolderPaths);
 	void Merge(FAssetData AssetData, TArray<FDeduplicationAssetStruct> DuplicateAssets);
 	FReply OnMergeClicked();

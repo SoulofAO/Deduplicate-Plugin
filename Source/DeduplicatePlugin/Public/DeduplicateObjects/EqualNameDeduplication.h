@@ -1,4 +1,8 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+/*
+ * Publisher: AO
+ * Year of Publication: 2026
+ * Copyright AO All Rights Reserved.
+ */
 
 #pragma once
 
@@ -46,9 +50,9 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Name Deduplication", meta = (AllowPrivateAccess = "true"))
 	float PenaltyByDistance = 0.25;
 
-	// If True — the penalty is calculated as a relative difference between names (ranging from 0 to 1),
+	// If True ï¿½ the penalty is calculated as a relative difference between names (ranging from 0 to 1),
 	// i.e. Penalty = RelativeDifference * PenaltyByDistance. 
-	// If False — the penalty is calculated based on the absolute number of differing characters.
+	// If False ï¿½ the penalty is calculated based on the absolute number of differing characters.
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Name Deduplication", meta = (AllowPrivateAccess = "true"))
 	bool bBlendPenaltyBySize = false;
 };

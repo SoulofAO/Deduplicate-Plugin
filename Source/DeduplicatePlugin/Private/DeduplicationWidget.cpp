@@ -1,4 +1,8 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+/*
+ * Publisher: AO
+ * Year of Publication: 2026
+ * Copyright AO All Rights Reserved.
+ */
 
 #include "DeduplicationWidget.h"
 #include "Widgets/Layout/SBorder.h"
@@ -11,6 +15,9 @@
 #include "Widgets/Views/SListView.h"
 #include "Widgets/Views/STableRow.h"
 #include "Widgets/Input/SComboBox.h"
+#include "Widgets/Input/SEditableTextBox.h"
+#include "Widgets/Layout/SScrollBox.h"
+#include "Framework/Application/SlateApplication.h"
 #include "EditorStyleSet.h"
 #include "ContentBrowserModule.h"
 #include "AssetRegistry/AssetRegistryModule.h"
@@ -25,6 +32,14 @@
 #include "Async/Async.h"
 #include "Misc/Optional.h"
 #include "UObject/ObjectRedirector.h"
+#include "HAL/PlatformFilemanager.h"
+#include "Serialization/JsonSerializer.h"
+#include "Serialization/JsonWriter.h"
+#include "Serialization/JsonReader.h"
+#include "Dom/JsonObject.h"
+#include "Dom/JsonValue.h"
+#include "Misc/FileHelper.h"
+#include "UObject/SoftObjectPath.h"
 #include "DeduplicationFunctionLibrary.h"
 #include "Widgets/Input/SSpinBox.h"
 #include "Containers/Ticker.h"
@@ -51,6 +66,7 @@ void SDeduplicationWidget::Construct(const FArguments& InArgs)
 	if (DeduplicationManager)
 	{
 		DetailsView->SetObject(DeduplicationManager);
+		RefreshSavedResultsList();
 	}
 	float CurrentProgress = 0.0f;
 
@@ -134,6 +150,9 @@ void SDeduplicationWidget::Construct(const FArguments& InArgs)
 												.Value(0.35f)
 												.MinSize(220.0f)
 												[
+													SNew(SBorder)
+														.Padding(8)
+														[
 															SNew(SVerticalBox)
 
 																+ SVerticalBox::Slot()
@@ -154,6 +173,51 @@ void SDeduplicationWidget::Construct(const FArguments& InArgs)
 																		.Text(FText::FromString(TEXT("AnalyzeInSelectFolder")))
 																		.OnClicked(this, &SDeduplicationWidget::OnAnalyzeClickedInSelectedFolder)
 																		.IsEnabled_Lambda([this]() { return !DeduplicationManager->bIsAnalyze && ContentFolder->GetSelectedItem() && ContentFolder->GetSelectedItem()->bIsFolder; })
+																]
+																+ SVerticalBox::Slot()
+																.AutoHeight()
+																.Padding(5, 2, 5, 2)
+																[
+																	SAssignNew(SaveResultsButton, SButton)
+																		.Text(FText::FromString(TEXT("Save Results")))
+																		.OnClicked(this, &SDeduplicationWidget::OnSaveResultsClicked)
+																		.IsEnabled_Lambda([this]() { return DeduplicationManager->GetAllClusters().Num() > 0; })
+																]
+																+ SVerticalBox::Slot()
+																.FillHeight(1.0f)
+																.Padding(5, 5, 5, 5)
+																[
+																	SNew(SBorder)
+																		.BorderImage(FCoreStyle::Get().GetBrush("ToolPanel.GroupBorder"))
+																		.Padding(5)
+																		[
+																			SNew(SVerticalBox)
+																				+ SVerticalBox::Slot()
+																				.AutoHeight()
+																				.Padding(0, 0, 0, 5)
+																				[
+																					SNew(STextBlock)
+																						.Text(FText::FromString(TEXT("Loaded Results:")))
+																				]
+																				+ SVerticalBox::Slot()
+																				.FillHeight(1.0f)
+																				[
+																					SAssignNew(SavedResultsScrollBox, SScrollBox)
+																						.Orientation(Orient_Vertical)
+																						+ SScrollBox::Slot()
+																						[
+																							SAssignNew(SavedResultsVerticalBox, SVerticalBox)
+																						]
+																				]
+																				+ SVerticalBox::Slot()
+																				.AutoHeight()
+																				.Padding(0, 5, 0, 0)
+																				[
+																					SAssignNew(AddSavedResultButton, SButton)
+																						.Text(FText::FromString(TEXT("Add")))
+																						.OnClicked(this, &SDeduplicationWidget::OnAddSavedResultClicked)
+																				]
+																		]
 																]
 																+ SVerticalBox::Slot()
 																.AutoHeight()
@@ -222,30 +286,43 @@ void SDeduplicationWidget::Construct(const FArguments& InArgs)
 																						float Progress = (DeduplicationManager != nullptr)
 																							? FMath::Clamp(DeduplicationManager->ProgressValue, 0.0f, 1.0f)
 																							: 0.0f;
-																						return FText::FromString(FString::Printf(TEXT("%.2f"), Progress*100) + TEXT("%"));
+																						return FText::FromString(FString::Printf(TEXT("%.2f"), Progress * 100.0f) + TEXT("%"));
 																					})
 																		]
 
-																]
-																+ SVerticalBox::Slot()
-																.FillHeight(1.0)
-																.Padding(0, 8, 0, 0)
-																[
-																	SNew(SBorder)
-																		.Padding(6)
+																		+ SHorizontalBox::Slot()
+																		.AutoWidth()
+																		.VAlign(VAlign_Center)
+																		.Padding(6, 0, 0, 0)
 																		[
-																			SNew(SScrollBox)
-																				+ SScrollBox::Slot()
-																				[
-																				SAssignNew(ResultsTextBlock, STextBlock)
-																					.Text(FText::FromString(ResultsString))
-																					.AutoWrapText(true)
-																				]
+																			SAssignNew(StopAnalyzeButton, SButton)
+																				.Text(FText::FromString(TEXT("Stop")))
+																				.IsEnabled_Lambda([this]() 
+																					{
+																						return DeduplicationManager != nullptr && DeduplicationManager->bIsAnalyze;
+																					})
+																				.OnClicked(this, &SDeduplicationWidget::OnStopAnalyzeClicked)
 																		]
+
 																]
-													
+													]
 												]
-										]
+												+ SSplitter::Slot()
+													.Value(0.2f)
+													[
+														SNew(SBorder)
+															.Padding(6)
+															[
+																SNew(SScrollBox)
+																	+ SScrollBox::Slot()
+																	[
+																		SAssignNew(ResultsTextBlock, STextBlock)
+																			.Text(FText::FromString(ResultsString))
+																			.AutoWrapText(true)
+																	]
+															]
+													]
+											]
 								]
 						]
 					
@@ -261,8 +338,8 @@ void SDeduplicationWidget::Construct(const FArguments& InArgs)
 							]
 					]
 				];
-										
-
+	DeduplicationManager->OnDeduplicationAnalyzeCompleted.RemoveAll(this);
+	DeduplicationManager->OnDeduplicationAnalyzeCompleted.AddRaw(this, &SDeduplicationWidget::OnDeduplicationAnalyzeFinished);
 	RebuildAnalyze();
 }
 
@@ -312,6 +389,15 @@ FReply SDeduplicationWidget::OnAnalyzeClickedInSelectedFolder()
 	return FReply::Handled();
 }
 
+FReply SDeduplicationWidget::OnStopAnalyzeClicked()
+{
+	if (DeduplicationManager != nullptr)
+	{
+		DeduplicationManager->StopAnalyze();
+	}
+	return FReply::Handled();
+}
+
 void SDeduplicationWidget::StartAnalyze(TArray<FString> RootFolderPaths)
 {
 	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
@@ -324,7 +410,7 @@ void SDeduplicationWidget::StartAnalyze(TArray<FString> RootFolderPaths)
 		AssetRegistry.GetAssetsByPath(FName(*RootPath), NewAssetDatas, /*bRecursive=*/true);
 		AssetDatas.Append(NewAssetDatas);
 	}
-	DeduplicationManager->OnDeduplicationAnalyzeCompleted.AddRaw(this, &SDeduplicationWidget::OnDeduplicationAnalyzeFinished);
+
 	DeduplicationManager->StartAnalyzeAssetsAsync(AssetDatas);
 }
 
@@ -353,8 +439,6 @@ void SDeduplicationWidget::Merge(FAssetData AssetData, TArray<FDeduplicationAsse
 	{
 		PathsToCheck.Add(DeduplicationAssetStruct.DuplicateAsset.PackagePath);
 	}
-
-	DeduplicationManager->Clasters;
 
 	TArray<UObject*> AssetsToConsolidate;
 	for (const FDeduplicationAssetStruct& DeduplicationAssetStruct : DuplicateAssets)
@@ -389,7 +473,8 @@ void SDeduplicationWidget::Merge(FAssetData AssetData, TArray<FDeduplicationAsse
 	}
 
 	TSet<FString> ExistingClusterFolderPaths;
-	for (const FDuplicateCluster& Cluster : DeduplicationManager->Clasters)
+	TArray<FDuplicateCluster> AllClusters = DeduplicationManager->GetAllClusters();
+	for (const FDuplicateCluster& Cluster : AllClusters)
 	{
 		if (Cluster.AssetData.IsValid())
 		{
@@ -517,11 +602,11 @@ FReply SDeduplicationWidget::OnMergeClicked()
 	if (SelectedItem->bIsFolder)
 	{
 		FString SelectedFolderPath = SelectedItem->Path;
-		TArray<FDuplicateCluster> ClastersInFolder = DeduplicationManager->FindMostPriorityDuplicateClusterByPath(SelectedFolderPath);
+		TArray<FDuplicateCluster> ClustersInFolder = DeduplicationManager->FindMostPriorityDuplicateClusterByPath(SelectedFolderPath);
 
-		while (ClastersInFolder.IsValidIndex(0))
+		while (ClustersInFolder.IsValidIndex(0))
 		{
-			FDuplicateCluster Cluster = ClastersInFolder[0];
+			FDuplicateCluster Cluster = ClustersInFolder[0];
 
 			TArray<FDeduplicationAssetStruct> FilteredDuplicateAssets;
 			for (FDeduplicationAssetStruct DuplicateAsset : Cluster.DuplicateAssets)
@@ -533,16 +618,18 @@ FReply SDeduplicationWidget::OnMergeClicked()
 			}
 
 			Merge(Cluster.AssetData, FilteredDuplicateAssets);
-			ClastersInFolder.RemoveAt(0);
+			ClustersInFolder.RemoveAt(0);
 		}
 	}
 	else
 	{
-		FDuplicateCluster* Cluster = DeduplicationManager->Clasters.FindByKey(SelectedItem->Data);
-		if (Cluster)
+		TArray<FDuplicateCluster> AllClusters = DeduplicationManager->GetAllClusters();
+		int32 ClusterIndex = AllClusters.IndexOfByKey(SelectedItem->Data);
+		if (ClusterIndex != INDEX_NONE)
 		{
+			FDuplicateCluster& Cluster = AllClusters[ClusterIndex];
 			TArray<UObject*> AssetsToConsolidate;
-			for (FDeduplicationAssetStruct DeduplicationAssetStruct : Cluster->DuplicateAssets)
+			for (FDeduplicationAssetStruct DeduplicationAssetStruct : Cluster.DuplicateAssets)
 			{
 				if (DeduplicationAssetStruct.DeduplicationAssetScore > DeduplicationManager->ConfidenceThreshold)
 				{
@@ -558,19 +645,18 @@ FReply SDeduplicationWidget::OnMergeClicked()
 
 void SDeduplicationWidget::OnDeduplicationAnalyzeFinished(const TArray<FDuplicateCluster>& ResultClusters)
 {
-	DeduplicationManager->OnDeduplicationAnalyzeCompleted.RemoveAll(this);
 	RebuildAnalyze();
 }
 
 void SDeduplicationWidget::RebuildAnalyze()
 {
 	HandleContentItemSelected(ContentFolder->GetSelectedItem());
-	AnalyzeButton->SetEnabled(true);
 
 	ContentFolder->ClearAllPathColor();
 	if (DeduplicationManager->bCompleteAnalyze)
 	{
-		for (FDuplicateCluster DuplicateCluster : DeduplicationManager->Clasters)
+		TArray<FDuplicateCluster> AllClusters = DeduplicationManager->GetAllClusters();
+		for (FDuplicateCluster DuplicateCluster : AllClusters)
 		{
 			if (DuplicateCluster.ClusterScore > DeduplicationManager->ConfidenceThreshold)
 			{
@@ -606,24 +692,24 @@ void SDeduplicationWidget::HandleContentItemSelected(TSharedPtr<FContentItem> Se
 			{
 				if (SelectedItem->bIsFolder)
 				{
-					TArray<FDuplicateCluster> DuplicateClusters = DeduplicationManager->GetClastersByFolder(SelectedItem->Path);
+					TArray<FDuplicateCluster> DuplicateClusters = DeduplicationManager->GetClustersByFolder(SelectedItem->Path);
 
-					int CountDeduplicateClasterUpConfidenceThreshold = 0;
+					int CountDeduplicateClusterUpConfidenceThreshold = 0;
 					for (FDuplicateCluster DuplicateCluster : DuplicateClusters)
 					{
 						if (DuplicateCluster.ClusterScore > DeduplicationManager->ConfidenceThreshold)
 						{
-							CountDeduplicateClasterUpConfidenceThreshold++;
+							CountDeduplicateClusterUpConfidenceThreshold++;
 						}
 					}
 
-					if (CountDeduplicateClasterUpConfidenceThreshold == DuplicateClusters.Num())
+					if (CountDeduplicateClusterUpConfidenceThreshold == DuplicateClusters.Num())
 					{
 						ResultsTextBlock->SetText(FText::FromString(FString::Format(TEXT("Count Duplicates In Folder: {0}"), { DuplicateClusters.Num() })));
 					}
 					else
 					{
-						ResultsTextBlock->SetText(FText::FromString(FString::Format(TEXT("Count Duplicates In Folder: {0} \n Showed Count Duplicates In Folder: {1}"), { DuplicateClusters.Num(), CountDeduplicateClasterUpConfidenceThreshold})));
+						ResultsTextBlock->SetText(FText::FromString(FString::Format(TEXT("Count Duplicates In Folder: {0} \n Showed Count Duplicates In Folder: {1}"), { DuplicateClusters.Num(), CountDeduplicateClusterUpConfidenceThreshold})));
 					}
 
 					if (DuplicateClusters.Num() > 0)
@@ -634,14 +720,16 @@ void SDeduplicationWidget::HandleContentItemSelected(TSharedPtr<FContentItem> Se
 				else
 				{
 					FAssetData Data = SelectedItem->Data;
-					FDuplicateCluster* DuplicateCluster = DeduplicationManager->Clasters.FindByKey(Data);
-					if (DuplicateCluster)
+					TArray<FDuplicateCluster> AllClusters = DeduplicationManager->GetAllClusters();
+					int32 ClusterIndex = AllClusters.IndexOfByKey(Data);
+					if (ClusterIndex != INDEX_NONE)
 					{
+						FDuplicateCluster& DuplicateCluster = AllClusters[ClusterIndex];
 						MergeButton->SetEnabled(true);
 						FString Text = FString::Format(TEXT("Main asset: {0}\n"), { Data.AssetName.ToString() });
 						Text += TEXT("Duplicates:\n");
 						Text += TEXT("Merge:\n");
-						for (const FDeduplicationAssetStruct& DuplicateAssetData : DuplicateCluster->DuplicateAssets)
+						for (const FDeduplicationAssetStruct& DuplicateAssetData : DuplicateCluster.DuplicateAssets)
 						{
 							if (DuplicateAssetData.DeduplicationAssetScore > DeduplicationManager->GroupConfidenceThreshold)
 							{
@@ -650,7 +738,7 @@ void SDeduplicationWidget::HandleContentItemSelected(TSharedPtr<FContentItem> Se
 						}
 						Text += TEXT("\n");
 						Text += TEXT("Non-Merge:\n");
-						for (const FDeduplicationAssetStruct& DuplicateAssetData : DuplicateCluster->DuplicateAssets)
+						for (const FDeduplicationAssetStruct& DuplicateAssetData : DuplicateCluster.DuplicateAssets)
 						{
 							if (DuplicateAssetData.DeduplicationAssetScore < DeduplicationManager->GroupConfidenceThreshold)
 							{
@@ -658,7 +746,7 @@ void SDeduplicationWidget::HandleContentItemSelected(TSharedPtr<FContentItem> Se
 							}
 						}
 
-						Text += FString::Format(TEXT("\nSimilarity score: {0}"), { FString::SanitizeFloat(DuplicateCluster->ClusterScore, 2) });
+						Text += FString::Format(TEXT("\nSimilarity score: {0}"), { FString::SanitizeFloat(DuplicateCluster.ClusterScore, 2) });
 
 						ResultsTextBlock->SetText(FText::FromString(Text));
 					}
@@ -721,3 +809,346 @@ bool SDeduplicationWidget::HandleRebuildAnalyze(float DeltaTime)
 	return false;
 }
 
+FReply SDeduplicationWidget::OnSaveResultsClicked()
+{
+	if (!DeduplicationManager)
+	{
+		return FReply::Handled();
+	}
+
+	TSharedRef<SWindow> SaveWindow = SNew(SWindow)
+		.Title(FText::FromString(TEXT("Save Results")))
+		.ClientSize(FVector2D(400, 150))
+		.SupportsMaximize(false)
+		.SupportsMinimize(false);
+
+	TSharedPtr<SEditableTextBox> SaveNameTextBox;
+	TSharedPtr<SCheckBox> IncludeCurrentCheckBox;
+
+	SaveWindow->SetContent(
+		SNew(SVerticalBox)
+			+ SVerticalBox::Slot()
+			.Padding(10)
+			.AutoHeight()
+			[
+				SNew(STextBlock)
+					.Text(FText::FromString(TEXT("Save Name:")))
+			]
+			+ SVerticalBox::Slot()
+			.Padding(10, 0, 10, 10)
+			.AutoHeight()
+			[
+				SAssignNew(SaveNameTextBox, SEditableTextBox)
+					.HintText(FText::FromString(TEXT("Enter save name")))
+			]
+			+ SVerticalBox::Slot()
+			.Padding(10, 0, 10, 10)
+			.AutoHeight()
+			[
+				SAssignNew(IncludeCurrentCheckBox, SCheckBox)
+					.IsChecked(ECheckBoxState::Checked)
+					.Content()
+					[
+						SNew(STextBlock)
+							.Text(FText::FromString(TEXT("Include current clusters")))
+					]
+			]
+			+ SVerticalBox::Slot()
+			.Padding(10)
+			.AutoHeight()
+			.HAlign(HAlign_Right)
+			[
+				SNew(SHorizontalBox)
+					+ SHorizontalBox::Slot()
+					.AutoWidth()
+					.Padding(5)
+					[
+						SNew(SButton)
+							.Text(FText::FromString(TEXT("Save")))
+							.OnClicked_Lambda([this, SaveWindow, SaveNameTextBox, IncludeCurrentCheckBox]()
+								{
+									FString SaveName = SaveNameTextBox->GetText().ToString();
+									if (!SaveName.IsEmpty())
+									{
+										bool bIncludeCurrent = IncludeCurrentCheckBox->IsChecked() == true;
+										DeduplicationManager->SaveResults(SaveName, bIncludeCurrent);
+										FSlateApplication::Get().RequestDestroyWindow(SaveWindow);
+									}
+									return FReply::Handled();
+								})
+					]
+					+ SHorizontalBox::Slot()
+					.AutoWidth()
+					.Padding(5)
+					[
+						SNew(SButton)
+							.Text(FText::FromString(TEXT("Cancel")))
+							.OnClicked_Lambda([SaveWindow]()
+								{
+									FSlateApplication::Get().RequestDestroyWindow(SaveWindow);
+									return FReply::Handled();
+								})
+					]
+			]
+	);
+
+	FSlateApplication::Get().AddWindow(SaveWindow);
+
+	return FReply::Handled();
+}
+
+FReply SDeduplicationWidget::OnAddSavedResultClicked()
+{
+	if (!DeduplicationManager)
+	{
+		return FReply::Handled();
+	}
+
+	TArray<FString> AllSavedResults = DeduplicationManager->GetSavedResultsList();
+	TArray<FString> AvailableResults;
+	for (const FString& ResultName : AllSavedResults)
+	{
+		if (!LoadedSavedResults.Contains(ResultName))
+		{
+			AvailableResults.Add(ResultName);
+		}
+	}
+
+	if (AvailableResults.Num() == 0)
+	{
+		return FReply::Handled();
+	}
+
+	TSharedRef<SWindow> SelectWindow = SNew(SWindow)
+		.Title(FText::FromString(TEXT("Select Saved Result")))
+		.ClientSize(FVector2D(400, 500))
+		.SupportsMaximize(false)
+		.SupportsMinimize(false);
+
+	TSharedPtr<SListView<TSharedPtr<FString>>> ResultsListView;
+	SelectWindowResultsList = MakeShareable(new TArray<TSharedPtr<FString>>());
+	for (const FString& ResultName : AvailableResults)
+	{
+		SelectWindowResultsList->Add(MakeShareable(new FString(ResultName)));
+	}
+
+	SelectWindow->SetContent(
+		SNew(SVerticalBox)
+			+ SVerticalBox::Slot()
+			.FillHeight(1.0f)
+			.Padding(10)
+			[
+				SAssignNew(ResultsListView, SListView<TSharedPtr<FString>>)
+					.ListItemsSource(SelectWindowResultsList.Get())
+					.OnGenerateRow_Lambda([](TSharedPtr<FString> Item, const TSharedRef<STableViewBase>& OwnerTable)
+						{
+							return SNew(STableRow<TSharedPtr<FString>>, OwnerTable)
+								.Content()
+								[
+									SNew(STextBlock)
+										.Text(FText::FromString(Item.IsValid() ? *Item : TEXT("")))
+								];
+						})
+			]
+			+ SVerticalBox::Slot()
+			.AutoHeight()
+			.Padding(10)
+			.HAlign(HAlign_Right)
+			[
+				SNew(SHorizontalBox)
+					+ SHorizontalBox::Slot()
+					.AutoWidth()
+					.Padding(5)
+					[
+						SNew(SButton)
+							.Text(FText::FromString(TEXT("Add")))
+							.OnClicked_Lambda([this, SelectWindow, ResultsListView]()
+								{
+									TSharedPtr<FString> SelectedItem = ResultsListView->GetSelectedItems().Num() > 0 ? ResultsListView->GetSelectedItems()[0] : nullptr;
+									if (SelectedItem.IsValid())
+									{
+										FString SaveName = *SelectedItem;
+										if (!LoadedSavedResults.Contains(SaveName))
+										{
+											LoadedSavedResults.Add(SaveName);
+											RefreshSavedResultsList();
+										}
+										FSlateApplication::Get().RequestDestroyWindow(SelectWindow);
+									}
+									return FReply::Handled();
+								})
+					]
+					+ SHorizontalBox::Slot()
+					.AutoWidth()
+					.Padding(5)
+					[
+						SNew(SButton)
+							.Text(FText::FromString(TEXT("Cancel")))
+							.OnClicked_Lambda([SelectWindow]()
+								{
+									FSlateApplication::Get().RequestDestroyWindow(SelectWindow);
+									return FReply::Handled();
+								})
+					]
+			]
+	);
+
+	FSlateApplication::Get().AddWindow(SelectWindow);
+
+	return FReply::Handled();
+}
+
+FReply SDeduplicationWidget::OnDeleteSavedResultClicked(FString SaveName)
+{
+	if (!DeduplicationManager)
+	{
+		return FReply::Handled();
+	}
+
+	LoadedSavedResults.Remove(SaveName);
+	RefreshSavedResultsList();
+	ReloadAllSavedResults();
+
+	return FReply::Handled();
+}
+
+void SDeduplicationWidget::RefreshSavedResultsList()
+{
+	if (!DeduplicationManager || !SavedResultsVerticalBox.IsValid())
+	{
+		return;
+	}
+
+	SavedResultsVerticalBox->ClearChildren();
+
+	for (const FString& SaveName : LoadedSavedResults)
+	{
+		SavedResultsVerticalBox->AddSlot()
+			.AutoHeight()
+			.Padding(2, 2, 2, 2)
+			[
+				CreateSavedResultItem(SaveName)
+			];
+	}
+
+	ReloadAllSavedResults();
+}
+
+void SDeduplicationWidget::ReloadAllSavedResults()
+{
+	if (!DeduplicationManager)
+	{
+		return;
+	}
+
+	TArray<FDuplicateCluster> SavedClusters;
+	for (const FString& SaveName : LoadedSavedResults)
+	{
+		FString SaveFilePath = DeduplicationManager->GetSaveFilePath(SaveName);
+		if (!FPlatformFileManager::Get().GetPlatformFile().FileExists(*SaveFilePath))
+		{
+			continue;
+		}
+
+		FString FileContents;
+		if (!FFileHelper::LoadFileToString(FileContents, *SaveFilePath))
+		{
+			continue;
+		}
+
+		TSharedPtr<FJsonObject> RootObject;
+		TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(FileContents);
+		if (!FJsonSerializer::Deserialize(Reader, RootObject) || !RootObject.IsValid())
+		{
+			continue;
+		}
+
+		const TArray<TSharedPtr<FJsonValue>>* ClustersArrayPtr = nullptr;
+		if (RootObject->TryGetArrayField(TEXT("Clusters"), ClustersArrayPtr))
+		{
+			FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
+
+			for (const TSharedPtr<FJsonValue>& ClusterValue : *ClustersArrayPtr)
+			{
+				TSharedPtr<FJsonObject> ClusterObject = ClusterValue->AsObject();
+				if (!ClusterObject.IsValid())
+				{
+					continue;
+				}
+
+				FDuplicateCluster NewCluster;
+				FString AssetPathString;
+				if (ClusterObject->TryGetStringField(TEXT("AssetPath"), AssetPathString))
+				{
+					FSoftObjectPath SoftObjectPath(AssetPathString);
+					FAssetData AssetData = AssetRegistryModule.Get().GetAssetByObjectPath(SoftObjectPath);
+					if (AssetData.IsValid())
+					{
+						NewCluster.AssetData = AssetData;
+					}
+				}
+
+				ClusterObject->TryGetNumberField(TEXT("ClusterScore"), NewCluster.ClusterScore);
+
+				const TArray<TSharedPtr<FJsonValue>>* DuplicateAssetsArrayPtr = nullptr;
+				if (ClusterObject->TryGetArrayField(TEXT("DuplicateAssets"), DuplicateAssetsArrayPtr))
+				{
+					for (const TSharedPtr<FJsonValue>& DuplicateAssetValue : *DuplicateAssetsArrayPtr)
+					{
+						TSharedPtr<FJsonObject> DuplicateAssetObject = DuplicateAssetValue->AsObject();
+						if (!DuplicateAssetObject.IsValid())
+						{
+							continue;
+						}
+
+						FDeduplicationAssetStruct NewDuplicateAsset;
+						FString DuplicateAssetPathString;
+						if (DuplicateAssetObject->TryGetStringField(TEXT("AssetPath"), DuplicateAssetPathString))
+						{
+							FSoftObjectPath DuplicateSoftObjectPath(DuplicateAssetPathString);
+							FAssetData DuplicateAssetData = AssetRegistryModule.Get().GetAssetByObjectPath(DuplicateSoftObjectPath);
+							if (DuplicateAssetData.IsValid())
+							{
+								NewDuplicateAsset.DuplicateAsset = DuplicateAssetData;
+							}
+						}
+						DuplicateAssetObject->TryGetNumberField(TEXT("Score"), NewDuplicateAsset.DeduplicationAssetScore);
+						NewCluster.DuplicateAssets.Add(NewDuplicateAsset);
+					}
+				}
+
+				if (NewCluster.AssetData.IsValid())
+				{
+					SavedClusters.Add(NewCluster);
+				}
+			}
+		}
+	}
+
+	DeduplicationManager->SavedClusters = SavedClusters;
+	DeduplicationManager->bCompleteAnalyze = true;
+	TArray<FDuplicateCluster> AllClusters = DeduplicationManager->GetAllClusters();
+	DeduplicationManager->OnDeduplicationAnalyzeCompleted.Broadcast(AllClusters);
+}
+
+TSharedRef<SWidget> SDeduplicationWidget::CreateSavedResultItem(FString SaveName)
+{
+	return SNew(SHorizontalBox)
+		+ SHorizontalBox::Slot()
+		.AutoWidth()
+		.Padding(0, 0, 5, 0)
+		.VAlign(VAlign_Center)
+		[
+			SNew(SButton)
+				.Text(FText::FromString(TEXT("×")))
+				.OnClicked(this, &SDeduplicationWidget::OnDeleteSavedResultClicked, SaveName)
+				.ContentPadding(FMargin(4, 2))
+		]
+		+ SHorizontalBox::Slot()
+		.FillWidth(1.0f)
+		.VAlign(VAlign_Center)
+		[
+			SNew(STextBlock)
+				.Text(FText::FromString(SaveName))
+		];
+}

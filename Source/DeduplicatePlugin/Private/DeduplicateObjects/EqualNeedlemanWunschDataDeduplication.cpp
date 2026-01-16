@@ -1,4 +1,8 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+/*
+ * Publisher: AO
+ * Year of Publication: 2026
+ * Copyright AO All Rights Reserved.
+ */
 
 #include "DeduplicateObjects/EqualNeedlemanWunschDataDeduplication.h"
 #include "Engine/AssetManager.h"
@@ -70,6 +74,11 @@ float UEqualNeedlemanWunschDataDeduplication::CalculateBinarySimilarity(const TA
 
 	for (int32 Row = 1; Row <= LengthA; ++Row)
 	{
+		if (ShouldStop())
+		{
+			return 0.0f;
+		}
+		
 		for (int32 Col = 1; Col <= LengthB; ++Col)
 		{
 			int32 Index = Idx(Row, Col);
@@ -77,17 +86,17 @@ float UEqualNeedlemanWunschDataDeduplication::CalculateBinarySimilarity(const TA
 			int32 IndexUp = Idx(Row - 1, Col);
 			int32 IndexLeft = Idx(Row, Col - 1);
 
-			// E: пропуск по B (съели символ из A, B имеет '-')
+			// E: пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ B (пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ A, B пїЅпїЅпїЅпїЅпїЅ '-')
 			int32 FromHToE = H[IndexUp] + GapOpen + GapExtend;
 			int32 FromEToE = E[IndexUp] + GapExtend;
 			E[Index] = (FromHToE > FromEToE) ? FromHToE : FromEToE;
 
-			// F: пропуск по A (съели символ из B, A имеет '-')
+			// F: пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ A (пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ B, A пїЅпїЅпїЅпїЅпїЅ '-')
 			int32 FromHToF = H[IndexLeft] + GapOpen + GapExtend;
 			int32 FromFToF = F[IndexLeft] + GapExtend;
 			F[Index] = (FromHToF > FromFToF) ? FromHToF : FromFToF;
 
-			// H: диагональ (match/mismatch)
+			// H: пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ (match/mismatch)
 			int32 BestPrev = H[IndexDiag];
 			if (E[IndexDiag] > BestPrev) BestPrev = E[IndexDiag];
 			if (F[IndexDiag] > BestPrev) BestPrev = F[IndexDiag];
@@ -97,7 +106,7 @@ float UEqualNeedlemanWunschDataDeduplication::CalculateBinarySimilarity(const TA
 		}
 	}
 
-	// Начинаем backtrace с максимума в правом-нижнем углу
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ backtrace пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ-пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 	int32 LastIndex = Idx(LengthA, LengthB);
 	int32 CurrentMatrix = 0; // 0 = H, 1 = E, 2 = F
 	int32 BestEndValue = H[LastIndex];
@@ -109,34 +118,39 @@ float UEqualNeedlemanWunschDataDeduplication::CalculateBinarySimilarity(const TA
 	int32 MatchingCount = 0;
 	int32 AlignmentLength = 0;
 
-	// Backtrace: восстанавливаем выравнивание и считаем совпадения
+	// Backtrace: пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	while (RowPtr > 0 || ColPtr > 0)
 	{
-		if (CurrentMatrix == 0) // H: диагональ
+		if (ShouldStop())
 		{
-			// Если достигли краёв — переключаемся в соответствующую матрицу пропусков
+			return 0.0f;
+		}
+		
+		if (CurrentMatrix == 0) // H: пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+		{
+			// пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 			if (RowPtr == 0 || ColPtr == 0)
 			{
-				if (RowPtr > 0) CurrentMatrix = 1; // E (двигаемся вверх по Row)
-				else if (ColPtr > 0) CurrentMatrix = 2; // F (двигаемся влево по Col)
+				if (RowPtr > 0) CurrentMatrix = 1; // E (пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ Row)
+				else if (ColPtr > 0) CurrentMatrix = 2; // F (пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ Col)
 				else break;
 				continue;
 			}
 
-			// Текущий элемент H[Index] = max(H,E,F at diag) + SubScore
+			// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ H[Index] = max(H,E,F at diag) + SubScore
 			int32 Index = Idx(RowPtr, ColPtr);
 			int32 IndexDiag = Idx(RowPtr - 1, ColPtr - 1);
 			int32 SubScore = (Data1[RowPtr - 1] == Data2[ColPtr - 1]) ? MatchScore : MismatchScore;
 
-			// Учитываем совпадение/не совпадение
+			// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ/пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 			++AlignmentLength;
 			if (Data1[RowPtr - 1] == Data2[ColPtr - 1])
 			{
 				++MatchingCount;
 			}
 
-			// Переходим на диагональ
-			// Выбираем, откуда пришли: H, E или F на диагонали
+			// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+			// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ: H, E пїЅпїЅпїЅ F пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 			int32 PrevH = H[IndexDiag];
 			int32 PrevE = E[IndexDiag];
 			int32 PrevF = F[IndexDiag];
@@ -149,36 +163,36 @@ float UEqualNeedlemanWunschDataDeduplication::CalculateBinarySimilarity(const TA
 			RowPtr -= 1;
 			ColPtr -= 1;
 		}
-		else if (CurrentMatrix == 1) // E: вертикальный пропуск (двигаемся по Row)
+		else if (CurrentMatrix == 1) // E: пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ Row)
 		{
-			// Если ColPtr==0, то можем только двигаться по Row до нуля
+			// пїЅпїЅпїЅпїЅ ColPtr==0, пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ Row пїЅпїЅ пїЅпїЅпїЅпїЅ
 			if (RowPtr == 0)
 			{
-				// защищаем от зацикливания
+				// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 				break;
 			}
 
 			++AlignmentLength;
-			// при пропуске совпадений не добавляем в MatchingCount
+			// пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ MatchingCount
 			int32 Index = Idx(RowPtr, ColPtr);
 			int32 IndexUp = Idx(RowPtr - 1, ColPtr);
 
-			// Проверяем, откуда пришли: E[Index] = max(H[IndexUp] + GapOpen+GapExtend, E[IndexUp] + GapExtend)
+			// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ: E[Index] = max(H[IndexUp] + GapOpen+GapExtend, E[IndexUp] + GapExtend)
 			int32 FromE = E[IndexUp] + GapExtend;
 			int32 FromH = H[IndexUp] + GapOpen + GapExtend;
 
 			if (FromE >= FromH)
 			{
-				CurrentMatrix = 1; // продолжение E
+				CurrentMatrix = 1; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ E
 			}
 			else
 			{
-				CurrentMatrix = 0; // пришли из H (открытие пропуска)
+				CurrentMatrix = 0; // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ H (пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ)
 			}
 
 			RowPtr -= 1;
 		}
-		else // CurrentMatrix == 2, F: горизонтальный пропуск (двигаемся по Col)
+		else // CurrentMatrix == 2, F: пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ Col)
 		{
 			if (ColPtr == 0)
 			{
@@ -195,26 +209,26 @@ float UEqualNeedlemanWunschDataDeduplication::CalculateBinarySimilarity(const TA
 
 			if (FromF >= FromH)
 			{
-				CurrentMatrix = 2; // продолжение F
+				CurrentMatrix = 2; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ F
 			}
 			else
 			{
-				CurrentMatrix = 0; // пришли из H (открытие пропуска)
+				CurrentMatrix = 0; // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ H (пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ)
 			}
 
 			ColPtr -= 1;
 		}
 	}
 
-	// Защита от деления на ноль (в теории не может быть AlignmentLength==0, но на всякий случай)
+	// пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ (пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ AlignmentLength==0, пїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ)
 	if (AlignmentLength == 0)
 	{
 		return 0.0f;
 	}
 
-	// Доля совпадающих байтов в выровненной последовательности
+	// пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	float Similarity = (float)MatchingCount / (float)AlignmentLength;
-	// Нормируем строго в диапазон [0,1]
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ [0,1]
 	if (Similarity < 0.0f) Similarity = 0.0f;
 	if (Similarity > 1.0f) Similarity = 1.0f;
 

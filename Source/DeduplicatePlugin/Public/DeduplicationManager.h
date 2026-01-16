@@ -1,4 +1,8 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+/*
+ * Publisher: AO
+ * Year of Publication: 2026
+ * Copyright AO All Rights Reserved.
+ */
 
 #pragma once
 
@@ -17,7 +21,7 @@ public:
 	FAssetData DuplicateAsset;
 
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Deduplication")
-	float DeduplicationAssetScore;
+	float DeduplicationAssetScore = 0.0;
 
 	bool operator==(const FAssetData& OtherDuplicateAsset) const
 	{
@@ -83,6 +87,28 @@ public:
 	}
 };
 
+USTRUCT()
+struct DEDUPLICATEPLUGIN_API FSavedDeduplicationResults
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	FString SaveName;
+
+	UPROPERTY()
+	FDateTime SaveDate;
+
+	UPROPERTY()
+	TArray<FDuplicateCluster> Clusters;
+
+	FSavedDeduplicationResults()
+	{
+		SaveName = TEXT("");
+		SaveDate = FDateTime::Now();
+		Clusters.Empty();
+	}
+};
+
 
 UENUM(Blueprintable)
 enum class ECombinationScoreMethod : uint8
@@ -107,7 +133,7 @@ class DEDUPLICATEPLUGIN_API UDeduplicationManager : public UObject
 public:
 	UDeduplicationManager();
 
-	bool FindDuplicateClusterByAssetData(const FAssetData& AssetData, TArray<FDuplicateCluster>& DuplicateClasters, FDuplicateCluster& ResultClaster);
+	bool FindDuplicateClusterByAssetData(const FAssetData& AssetData, TArray<FDuplicateCluster>& DuplicateClusters, FDuplicateCluster& ResultCluster);
 
 	void EndDeduplicateAssetsAsync(TArray<FDuplicateGroup> NewDeduplicateGroups, UDeduplicateObject* EarlyCheckAlgorithm);
 
@@ -126,7 +152,7 @@ public:
 
 	void StartDeduplicationAsyncAfterEarlyCheck();
 
-	void StartCreateClasters();
+	void StartCreateClusters();
 
 	void BindUpdateDeduplicationProgressCompleted();
 
@@ -166,9 +192,11 @@ public:
 
 	float ProgressValue{ 0.0f };
 
-	TArray<FDuplicateCluster> Clasters;
+	TArray<FDuplicateCluster> SavedClusters;
+	TArray<FDuplicateCluster> AnalyzedClusters;
 
-	TArray<FDuplicateCluster> GetClastersByFolder(FString Folder);
+	TArray<FDuplicateCluster> GetAllClusters() const;
+	TArray<FDuplicateCluster> GetClustersByFolder(FString Folder);
 
 	UPROPERTY()
 	bool bIsAnalyze = false;
@@ -176,5 +204,31 @@ public:
 	UPROPERTY()
 	bool bCompleteAnalyze = false;
 
+	FThreadSafeCounter bShouldStop;
+
 	FOnDeduplicationAnalyzeCompleted OnDeduplicationAnalyzeCompleted;
+
+	UFUNCTION(BlueprintCallable, Category = "Deduplication")
+	void SaveResults(const FString& SaveName, bool bIncludeCurrentClusters = true);
+
+	UFUNCTION(BlueprintCallable, Category = "Deduplication")
+	bool LoadResults(const FString& SaveName);
+
+	UFUNCTION(BlueprintCallable, Category = "Deduplication")
+	void DeleteSavedResults(const FString& SaveName);
+
+	UFUNCTION(BlueprintCallable, Category = "Deduplication")
+	TArray<FString> GetSavedResultsList() const;
+
+	UFUNCTION(BlueprintCallable, Category = "Deduplication")
+	void AddClustersToCurrent(const TArray<FDuplicateCluster>& ClustersToAdd);
+
+	UFUNCTION(BlueprintCallable, Category = "Deduplication")
+	FString GetSaveFilePath(const FString& SaveName) const;
+
+	UFUNCTION(BlueprintCallable, Category = "Deduplication")
+	void StopAnalyze();
+
+private:
+	static FString GetSaveDirectory();
 };

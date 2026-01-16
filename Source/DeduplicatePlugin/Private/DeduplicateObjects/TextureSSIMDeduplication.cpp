@@ -1,4 +1,8 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+/*
+ * Publisher: AO
+ * Year of Publication: 2026
+ * Copyright AO All Rights Reserved.
+ */
 
 
 #include "DeduplicateObjects/TextureSSIMDeduplication.h"
@@ -93,7 +97,7 @@ bool UTextureSSIMDeduplication::ExtractGrayFromTexture(UTexture2D* Texture, FLoa
             const void* RawData = Mip.BulkData.LockReadOnly();
             if (!RawData)
             {
-                // не вызываем Unlock, если LockReadOnly вернул nullptr
+                // пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ Unlock, пїЅпїЅпїЅпїЅ LockReadOnly пїЅпїЅпїЅпїЅпїЅпїЅ nullptr
                 WaitEvent->Trigger();
                 return;
             }
@@ -367,6 +371,11 @@ TArray<FDuplicateGroup> UTextureSSIMDeduplication::Internal_FindDuplicates_Imple
 
     for (int32 Index = 0; Index < TotalAssetsNumber; ++Index)
     {
+        if (ShouldStop())
+        {
+            break;
+        }
+        
         SetProgress(float(Index) / float(TotalAssetsNumber));
         OnDeduplicationProgressCompleted.Broadcast();
 
@@ -385,6 +394,11 @@ TArray<FDuplicateGroup> UTextureSSIMDeduplication::Internal_FindDuplicates_Imple
 
     for (int32 i = 0; i < NumLoaded; ++i)
     {
+        if (ShouldStop())
+        {
+            break;
+        }
+        
         if (Assigned[i])
         {
             continue;
@@ -396,6 +410,11 @@ TArray<FDuplicateGroup> UTextureSSIMDeduplication::Internal_FindDuplicates_Imple
 
         for (int32 j = i + 1; j < NumLoaded; ++j)
         {
+            if (ShouldStop())
+            {
+                break;
+            }
+            
             if (Assigned[j])
             {
                 continue;

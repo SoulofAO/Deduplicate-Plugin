@@ -6,7 +6,7 @@
 	"Description": "",
 	"Category": "Other",
 	"CreatedBy": "AO",
-	"CreatedByURL": "",
+	"CreatedByURL": "https://github.com/SoulofAO",
 	"DocsURL": "",
 	"MarketplaceURL": "",
 	"SupportURL": "",
@@ -18,7 +18,8 @@
 		{
 			"Name": "DeduplicatePlugin",
 			"Type": "Editor",
-			"LoadingPhase": "Default"
+			"LoadingPhase": "Default",
+			"PlatformAllowList": ["Win64","IOS","Linux"]
 		}
 	]
 }

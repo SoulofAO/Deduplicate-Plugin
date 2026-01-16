@@ -1,4 +1,8 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+/*
+ * Publisher: AO
+ * Year of Publication: 2026
+ * Copyright AO All Rights Reserved.
+ */
 
 #pragma once
 
@@ -7,6 +11,8 @@
 #include "Engine/AssetManager.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "DeduplicateObject.generated.h"
+
+class UDeduplicationManager;
 
 
 USTRUCT(BlueprintType)
@@ -110,6 +116,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Deduplication")
 	TArray<TSubclassOf<UObject>> ExcludeClasses;
 
+	class UDeduplicationManager* OwnerManager;
+
 	//If return true, it will preload the Assets that you are processing.
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Deduplication")
 	bool ShouldLoadAssets();
@@ -144,4 +152,6 @@ protected:
 	//Support functions for implementing the operation progression slider.
 	UFUNCTION(BlueprintCallable, Category = "Deduplication")
 	void SetProgress(float NewProgress);
+
+	bool ShouldStop() const;
 };

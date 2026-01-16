@@ -1,4 +1,8 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+/*
+ * Publisher: AO
+ * Year of Publication: 2026
+ * Copyright AO All Rights Reserved.
+ */
 
 #pragma once
 
@@ -31,9 +35,9 @@ protected:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Size Deduplication")
 	float PenaltyByDifferenceDistance = 0.0001;
 
-	//	// If True — the penalty is calculated as a relative difference between suze (ranging from 0 to 1),
+	//	// If True ï¿½ the penalty is calculated as a relative difference between suze (ranging from 0 to 1),
 	// i.e. Penalty = RelativeDifference * PenaltyByDistance. 
-	// If False — the penalty is calculated based on the absolute number of differing size.
+	// If False ï¿½ the penalty is calculated based on the absolute number of differing size.
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Size Deduplication")
 	bool bBlendPenaltyBySize = false;
 

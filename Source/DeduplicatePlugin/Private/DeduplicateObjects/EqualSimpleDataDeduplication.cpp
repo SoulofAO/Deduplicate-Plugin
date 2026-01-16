@@ -1,4 +1,8 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+/*
+ * Publisher: AO
+ * Year of Publication: 2026
+ * Copyright AO All Rights Reserved.
+ */
 
 #include "DeduplicateObjects/EqualSimpleDataDeduplication.h"
 #include "Engine/AssetManager.h"
@@ -19,6 +23,11 @@ float UEqualSimpleUassetDataDeduplication::CalculateBinarySimilarity(const TArra
 
 	for (int32 i = 0; i < MinSize; i++)
 	{
+		if (ShouldStop())
+		{
+			return 0.0f;
+		}
+		
 		if (Data1[i] == Data2[i])
 		{
 			MatchingBytes++;
