@@ -1,4 +1,12 @@
 <p align="center">
+  <strong>-------></strong>
+  <a href="/README.md">English</a> |
+  <a href="/README.ru.md">Русский</a> |
+  <a href="/README.zh.md">中文</a>
+  <strong><-------</strong>
+</p>
+
+<p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="./media/logo-dark.png">
     <img width="512" height="auto" alt="Project Logo" src="./media/logo-light.png">
@@ -73,18 +81,17 @@ You configure the algorithm from different <code>DeduplicateObject</code>. <code
   Select Analyze from the control panel or select the folder in which you want to analyze the value and click Analyze in Folder. 
 </p>
 <p align="left">
-Wait antill analize operation complete.
+Wait until analyze operation complete.
 </p>
 <h3 align="left">3. Merge</h3>
 <p align="left">
 Once complete, all potential duplicate objects will appear in the "Content" section on the right. You can view merge parameters and test results in the statistics window by selecting a specific asset or folder, and configure filters. Select priority folders or resources that are the primary entities for deduplication, and then click <code>Unite</code>.
-<>
 
 <div align="center">
   <img style="width: 80%; height: auto;" alt="Merge Results" src="./media/merge-results.png" />
 </div>
 
-<h3 align="left">3. Profit. For more specific information, read documentation</h3>
+<h3 align="left">4. Profit. For more specific information, read documentation</h3>
 
 * * * * * * * * * * * * * * * * * *
 * * * * * * * * * * * * * * * * * *
