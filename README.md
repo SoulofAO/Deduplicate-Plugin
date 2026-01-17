@@ -86,19 +86,6 @@ Once complete, all potential duplicate objects will appear in the "Content" sect
 
 <h3 align="left">3. Profit. For more specific information, read documentation</h3>
 
-
-
-* * * * * * * * * * * * * * * * * *
-* * * * * * * * * * * * * * * * * *
-
-<h2 align="center">
-> 💡 Additional Information:
-</h2>
-
-<p align="left">
-For more information, read the attached documentation.
-</p>
-
 * * * * * * * * * * * * * * * * * *
 * * * * * * * * * * * * * * * * * *
 
@@ -133,7 +120,7 @@ or
 <h3 align="center">Showcase Video</h3>
 
 <p align="center">
-  <a href="https://youtu.be/aj4SMnDF4fk?si=Y8tI0uOJMNXPnQGJ">Watch on YouTube</a>
+  <a href="https://youtu.be/aj4SMnDF4fk?si=Y8tI0uOJMNXPnQGJ">Watch demonstration on YouTube</a>
 </p>
 
 <h3 align="center">Documentation</h3>
