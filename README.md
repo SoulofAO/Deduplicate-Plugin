@@ -59,7 +59,8 @@ Plugin for Removing Duplicates in Unreal Engine Project
 <h3 align="left">1. Configure your deduplication algorithm in the window on the right.</h3>
 
 <p align="left">
-You configure the algorithm from different <code>DeduplicateObject</code>. <code>DeduplicateObject</code> look for groups of similar objects. These groups are combined into clusters through the sum or multiplication through the <code>Combination Score Method</code>, and then filtered by the <code>Confidence Score</code>.
+You configure the algorithm from different <code>DeduplicateObject</code>. <code>DeduplicateObject</code> look for groups of similar objects. These groups are combined into clusters through the sum or multiplication through the 
+<code>Combination Score Method</code>, and then filtered by the <code>Confidence Score</code> and <code>Group Confidence Score</code>.
 </p>
 
 <div align="center">
@@ -67,52 +68,25 @@ You configure the algorithm from different <code>DeduplicateObject</code>. <code
   <img style="width: 80%; height: auto;" alt="Score Method Configuration" src="./media/score-method-configuration.png" />
 </div>
 
-<h3 align="left">2. Early Check Deduplicate Objects</h3>
-
+<h3 align="left">1. Analyze</h3>
 <p align="left">
-<code>Early Check Deduplicate Objects</code> - separately exist for the pre-evaluation of deduplicated objects, before moving on to their evaluation by heavier algorithms.
+  To begin, configure the Deduplicator Object above, then select Analyze from the control panel or select the folder in which you want to analyze the value and click Analyze in Folder.
 </p>
-
-<h3 align="left">3. Analyze and Merge</h3>
-
 <p align="left">
-After that, click one of the two <code>Analyze</code> buttons. After work, all the intended duplicators will appear in the Content on the right. Select priority folders or assets, and then click <code>Merge</code>.
+Wait antill analize operation complete.
 </p>
+<h3 align="left">2. Merge</h3>
+<p align="left">
+Once complete, all potential duplicate objects will appear in the "Content" section on the right. You can view merge parameters and test results in the statistics window by selecting a specific asset or folder, and configure filters. Select priority folders or resources that are the primary entities for deduplication, and then click <code>Unite</code>.
+<>
 
 <div align="center">
   <img style="width: 80%; height: auto;" alt="Merge Results" src="./media/merge-results.png" />
 </div>
 
-<h3 align="left">4. Profit.</h3>
+<h3 align="left">3. Profit. For more specific information, read documentation</h3>
 
-* * * * * * * * * * * * * * * * * *
-* * * * * * * * * * * * * * * * * *
 
-<h1 align="center">📊 Working with the Plugin</h1>
-
-<h2 align="center">Algorithm Configuration</h2>
-
-<p align="left">
-The deduplication algorithm is configured through multiple <code>DeduplicateObject</code> components. Each <code>DeduplicateObject</code> searches for groups of similar objects within your project.
-</p>
-
-<h3 align="left">Combination Score Method</h3>
-
-<p align="left">
-Similar object groups are combined into clusters using the <code>Combination Score Method</code>, which can use either sum or multiplication operations to calculate similarity scores.
-</p>
-
-<h3 align="left">Confidence Score Filtering</h3>
-
-<p align="left">
-The resulting clusters are then filtered by the <code>Confidence Score</code> to ensure only high-probability duplicates are identified for merging.
-</p>
-
-<h3 align="left">Early Check Deduplicate Objects</h3>
-
-<p align="left">
-<code>Early Check Deduplicate Objects</code> provides a lightweight pre-evaluation step that filters objects before they are processed by the heavier deduplication algorithms. This optimization helps improve performance by reducing the number of objects that need detailed analysis.
-</p>
 
 * * * * * * * * * * * * * * * * * *
 * * * * * * * * * * * * * * * * * *
