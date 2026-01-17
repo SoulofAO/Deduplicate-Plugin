@@ -48,7 +48,7 @@ Plugin for Removing Duplicates in Unreal Engine Project
 <h3 align="left">2. Open the plugin main utility window.</h3>
 
 <div align="center">
-  <img style="width: 80%; height: auto;" alt="Plugin Main Utility" src="https://github.com/user-attachments/assets/56ca7d7d-54be-448f-bd78-5b2ba71865fd" />
+  <img style="width: 80%; height: auto;" alt="Plugin Main Utility" src="./media/plugin-main-utility.png" />
 </div>
 
 * * * * * * * * * * * * * * * * * *
@@ -63,8 +63,8 @@ You configure the algorithm from different <code>DeduplicateObject</code>. <code
 </p>
 
 <div align="center">
-  <img style="width: 80%; height: auto;" alt="Deduplication Algorithm Configuration" src="https://github.com/user-attachments/assets/dbd24ac5-7a01-463f-8a03-b7ecf3dc61b5" />
-  <img style="width: 80%; height: auto;" alt="Score Method Configuration" src="https://github.com/user-attachments/assets/cc4ee6d7-2773-46ee-8dbc-7f6121902c03" />
+  <img style="width: 80%; height: auto;" alt="Deduplication Algorithm Configuration" src="./media/deduplication-algorithm-configuration.png" />
+  <img style="width: 80%; height: auto;" alt="Score Method Configuration" src="./media/score-method-configuration.png" />
 </div>
 
 <h3 align="left">2. Early Check Deduplicate Objects</h3>
@@ -80,7 +80,7 @@ After that, click one of the two <code>Analyze</code> buttons. After work, all t
 </p>
 
 <div align="center">
-  <img style="width: 80%; height: auto;" alt="Merge Results" src="https://github.com/user-attachments/assets/6d40c7c5-2a5c-456f-9820-a5bb794a75fc" />
+  <img style="width: 80%; height: auto;" alt="Merge Results" src="./media/merge-results.png" />
 </div>
 
 <h3 align="left">4. Profit.</h3>
