@@ -73,23 +73,24 @@ You configure the algorithm from different <code>DeduplicateObject</code>. <code
 
 <div align="center">
   <img style="width: 80%; height: auto;" alt="Deduplication Algorithm Configuration" src="./media/deduplication-algorithm-configuration.png" />
-  <img style="width: 80%; height: auto;" alt="Score Method Configuration" src="./media/score-method-configuration.png" />
 </div>
 
 <h3 align="left">2. Analyze</h3>
 <p align="left">
   Select Analyze from the control panel or select the folder in which you want to analyze the value and click Analyze in Folder. 
 </p>
+
+<div align="center">
+  <img style="width: 80%; height: auto;" alt="Score Method Configuration" src="./media/score-method-configuration.png" />
+  <img style="width: 80%; height: auto;" alt="Merge Results" src="./media/merge-results.png" />
+</div>
+
 <p align="left">
 Wait until analyze operation complete.
 </p>
 <h3 align="left">3. Merge</h3>
 <p align="left">
 Once complete, all potential duplicate objects will appear in the "Content" section on the right. You can view merge parameters and test results in the statistics window by selecting a specific asset or folder, and configure filters. Select priority folders or resources that are the primary entities for deduplication, and then click <code>Unite</code>.
-
-<div align="center">
-  <img style="width: 80%; height: auto;" alt="Merge Results" src="./media/merge-results.png" />
-</div>
 
 <h3 align="left">4. Profit. For more specific information, read documentation</h3>
 
