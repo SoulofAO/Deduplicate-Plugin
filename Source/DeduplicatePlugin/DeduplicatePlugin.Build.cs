@@ -42,10 +42,10 @@ public class DeduplicatePlugin : ModuleRules
 				"Slate",
 				"SlateCore",
 				"ToolWidgets",
-				"Niagara",
                 "RenderCore",
 				"RHI",
-				"Json"
+				"Json",
+				"Niagara"
             }
 			);
 			
